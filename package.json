@@ -4,11 +4,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "cd backend && npm ci && npm run build:prod && cd .. && vite build",
+    "build": "cd backend && npm run build:prod && cd .. && vite build",
     "build:frontend": "vite build",
     "dev": "vite",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0"
+    "start": "vite preview --host 0.0.0.0",
+    "preinstall": "cd backend && npm ci || true"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
