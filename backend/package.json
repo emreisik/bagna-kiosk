@@ -18,7 +18,7 @@
     "db:migrate-manual": "tsx scripts/migrate-db.ts"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": "20.x",
     "npm": ">=10.0.0"
   },
   "keywords": [
