@@ -17,6 +17,18 @@ export async function createApp(): Promise<Express> {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: "cross-origin" }, // Görsellere erişim için
+      contentSecurityPolicy:
+        config.NODE_ENV === "production"
+          ? {
+              directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"], // Vite inline scripts için
+                styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind inline styles için
+                imgSrc: ["'self'", "data:", "https:"],
+                connectSrc: ["'self'"],
+              },
+            }
+          : false,
     }),
   );
   app.use(compression());
@@ -40,8 +52,12 @@ export async function createApp(): Promise<Express> {
           callback(new Error("Not allowed by CORS"));
         }
       } else {
-        // Production modda sadece FRONTEND_URL'e izin ver
-        if (!origin || origin === config.FRONTEND_URL) {
+        // Production modda same-origin (backend frontend'i serve eder)
+        // Same-origin isteklerde origin header gelmez, bu yüzden !origin check yeterli
+        if (
+          !origin ||
+          (config.FRONTEND_URL && origin === config.FRONTEND_URL)
+        ) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));
@@ -70,6 +86,17 @@ export async function createApp(): Promise<Express> {
   // API Routes
   const routes = await import("./routes/index.js");
   app.use("/api", routes.default);
+
+  // Frontend static files (Production only)
+  if (config.NODE_ENV === "production") {
+    const frontendDistPath = path.join(__dirname, "../../dist");
+    app.use(express.static(frontendDistPath));
+
+    // SPA fallback - tüm route'lar index.html'e yönlendirilir
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(frontendDistPath, "index.html"));
+    });
+  }
 
   // Error handling
   const { errorMiddleware } = await import("./middleware/error.middleware.js");

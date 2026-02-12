@@ -11,7 +11,8 @@ const envSchema = z.object({
     .default("development"),
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default("7d"),
-  FRONTEND_URL: z.string().url(),
+  // FRONTEND_URL artık gerekli değil - production'da same-origin
+  FRONTEND_URL: z.string().url().optional(),
 });
 
 export const config = envSchema.parse(process.env);

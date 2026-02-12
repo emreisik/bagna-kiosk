@@ -15,24 +15,23 @@ cmds = [
 
 [build.nixpacksPlan.phases.build]
 cmds = [
-  "cd backend && npx prisma generate && npx prisma migrate deploy && npm run build && cd ..",
+  "cd backend && npm run build:prod && cd ..",
   "npm run build"
 ]
 
 [deploy]
-startCommand = "cd backend && npm start & sleep 5 && cd .. && npm run preview -- --host 0.0.0.0 --port $PORT"
-healthcheckPath = "/"
+startCommand = "cd backend && npm start"
+healthcheckPath = "/health"
 healthcheckTimeout = 200
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
 # Environment Variables (Railway UI'dan eklenecek):
-# Backend için:
 # - DATABASE_URL (Neon PostgreSQL connection string)
 # - JWT_SECRET (min 64 karakter random string - node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 # - JWT_EXPIRES_IN=7d
 # - NODE_ENV=production
-# - FRONTEND_URL=http://localhost:$PORT
 #
-# Frontend için:
-# - VITE_API_URL=http://localhost:3001 (backend localhost:3001'de çalışıyor)
+# NOT: PORT Railway tarafından otomatik sağlanır, manuel eklemeyin!
+# NOT: VITE_API_URL relative path kullanır (/api), build-time'da set edilmeli:
+#      Frontend build sırasında: VITE_API_URL=/api npm run build
