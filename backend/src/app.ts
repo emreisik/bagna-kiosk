@@ -24,7 +24,14 @@ export async function createApp(): Promise<Express> {
                 defaultSrc: ["'self'"],
                 scriptSrc: ["'self'", "'unsafe-inline'"], // Vite inline scripts için
                 styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind inline styles için
-                imgSrc: ["'self'", "data:", "https:"],
+                imgSrc: [
+                  "'self'",
+                  "data:",
+                  "https:",
+                  "http://192.168.*",
+                  "http://10.*",
+                  "http://172.*",
+                ], // Local network IP'ler için
                 connectSrc: ["'self'"],
               },
             }
@@ -90,10 +97,30 @@ export async function createApp(): Promise<Express> {
   // Frontend static files (Production only)
   if (config.NODE_ENV === "production") {
     const frontendDistPath = path.join(__dirname, "../../dist");
-    app.use(express.static(frontendDistPath));
+
+    // Static files with proper MIME types
+    app.use(
+      express.static(frontendDistPath, {
+        setHeaders: (res, filePath) => {
+          // Set correct MIME types
+          if (filePath.endsWith(".js")) {
+            res.setHeader("Content-Type", "application/javascript");
+          } else if (filePath.endsWith(".css")) {
+            res.setHeader("Content-Type", "text/css");
+          } else if (filePath.endsWith(".png")) {
+            res.setHeader("Content-Type", "image/png");
+          } else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+            res.setHeader("Content-Type", "image/jpeg");
+          } else if (filePath.endsWith(".svg")) {
+            res.setHeader("Content-Type", "image/svg+xml");
+          }
+        },
+      }),
+    );
 
     // SPA fallback - tüm route'lar index.html'e yönlendirilir
     app.get("*", (req, res) => {
+      res.setHeader("Content-Type", "text/html");
       res.sendFile(path.join(frontendDistPath, "index.html"));
     });
   }
