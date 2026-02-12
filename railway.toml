@@ -21,7 +21,7 @@ cmds = [
 
 [deploy]
 startCommand = "cd backend && npm start & sleep 5 && cd .. && npm run preview -- --host 0.0.0.0 --port $PORT"
-healthcheckPath = "/health"
+healthcheckPath = "/"
 healthcheckTimeout = 200
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
