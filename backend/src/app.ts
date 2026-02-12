@@ -28,11 +28,9 @@ export async function createApp(): Promise<Express> {
                   "'self'",
                   "data:",
                   "https:",
-                  "http://192.168.*",
-                  "http://10.*",
-                  "http://172.*",
-                ], // Local network IP'ler için
-                connectSrc: ["'self'"],
+                  "http:", // Allow all HTTP sources (includes localhost and local IPs)
+                ],
+                connectSrc: ["'self'", "https://api.qrserver.com"], // QR code API için
               },
             }
           : false,
