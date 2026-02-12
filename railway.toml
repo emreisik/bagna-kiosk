@@ -1,4 +1,4 @@
-# Railway Configuration - Monorepo (Backend + Frontend)
+# Railway Monorepo Configuration - Nixpacks
 # Tek Railway service'te hem backend hem frontend çalışır
 
 [build]
@@ -28,7 +28,7 @@ restartPolicyMaxRetries = 10
 
 # Environment Variables (Railway UI'dan eklenecek):
 # - DATABASE_URL (Neon PostgreSQL connection string)
-# - JWT_SECRET (min 64 karakter random string - node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+# - JWT_SECRET (min 64 karakter - node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 # - JWT_EXPIRES_IN=7d
 # - NODE_ENV=production
 #
