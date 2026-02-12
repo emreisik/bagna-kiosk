@@ -100,26 +100,52 @@ export async function createApp(): Promise<Express> {
     app.use(
       express.static(frontendDistPath, {
         setHeaders: (res, filePath) => {
-          // Set correct MIME types
-          if (filePath.endsWith(".js")) {
-            res.setHeader("Content-Type", "application/javascript");
-          } else if (filePath.endsWith(".css")) {
-            res.setHeader("Content-Type", "text/css");
-          } else if (filePath.endsWith(".png")) {
+          if (!filePath || typeof filePath !== "string") return;
+
+          // Set correct MIME types based on file extension
+          const lowerPath = filePath.toLowerCase();
+          if (lowerPath.endsWith(".js")) {
+            res.setHeader(
+              "Content-Type",
+              "application/javascript; charset=utf-8",
+            );
+          } else if (lowerPath.endsWith(".css")) {
+            res.setHeader("Content-Type", "text/css; charset=utf-8");
+          } else if (lowerPath.endsWith(".png")) {
             res.setHeader("Content-Type", "image/png");
-          } else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+          } else if (
+            lowerPath.endsWith(".jpg") ||
+            lowerPath.endsWith(".jpeg")
+          ) {
             res.setHeader("Content-Type", "image/jpeg");
-          } else if (filePath.endsWith(".svg")) {
+          } else if (lowerPath.endsWith(".svg")) {
             res.setHeader("Content-Type", "image/svg+xml");
+          } else if (
+            lowerPath.endsWith(".woff") ||
+            lowerPath.endsWith(".woff2")
+          ) {
+            res.setHeader("Content-Type", "font/woff2");
+          } else if (lowerPath.endsWith(".json")) {
+            res.setHeader("Content-Type", "application/json");
+          } else if (lowerPath.endsWith(".html")) {
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
           }
         },
       }),
     );
 
     // SPA fallback - tüm route'lar index.html'e yönlendirilir
-    app.get("*", (req, res) => {
-      res.setHeader("Content-Type", "text/html");
-      res.sendFile(path.join(frontendDistPath, "index.html"));
+    app.get("*", (req, res, next) => {
+      const indexPath = path.join(frontendDistPath, "index.html");
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error("❌ Failed to send index.html:", err);
+          res.status(404).send("Frontend not found. Build may have failed.");
+        }
+      });
     });
   }
 
