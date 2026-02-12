@@ -1,8 +1,12 @@
 # ============================================
-# Railway Configuration - Simplified
+# Railway Configuration - Railpack Builder
 # ============================================
-# Railway default Nixpacks detection kullanır
-# Root package.json "build" script'i otomatik çalışır
+# Railpack: Modern builder (Nixpacks deprecated)
+# 38% daha küçük image, daha iyi cache invalidation
+
+[build]
+builder = "RAILPACK"
+buildCommand = "npm run build"
 
 [deploy]
 startCommand = "node backend/dist/index.js"
