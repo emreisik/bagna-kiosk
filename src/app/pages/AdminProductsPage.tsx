@@ -9,6 +9,7 @@ import {
   NotificationModal,
   NotificationType,
 } from "../components/admin/NotificationModal";
+import { normalizeImageUrl } from "../../utils/imageUrl";
 
 export function AdminProductsPage() {
   const navigate = useNavigate();
@@ -627,7 +628,7 @@ export function AdminProductsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <img
-                        src={product.imageUrl}
+                        src={normalizeImageUrl(product.imageUrl)}
                         alt={product.title}
                         className="w-24 h-24 object-contain rounded"
                       />

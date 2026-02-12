@@ -1,5 +1,6 @@
 import { Product } from "../../../data/products";
 import { cn } from "../ui/utils";
+import { normalizeImageUrl } from "../../../utils/imageUrl";
 
 interface GalleryCardProps {
   product: Product;
@@ -47,7 +48,7 @@ export function GalleryCard({
     <div className="cursor-pointer" onClick={onClick}>
       <div className="relative w-full bg-white overflow-hidden group">
         <img
-          src={product.imageUrl}
+          src={normalizeImageUrl(product.imageUrl)}
           alt={product.title}
           className="w-full h-auto object-contain"
           loading="lazy"

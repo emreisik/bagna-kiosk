@@ -3,6 +3,7 @@ import { Product } from "../../../data/products";
 import { useI18n } from "../../../contexts/I18nContext";
 import { useCurrency } from "../../../hooks/useCurrency";
 import { motion, AnimatePresence } from "motion/react";
+import { normalizeImageUrl } from "../../../utils/imageUrl";
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -60,7 +61,7 @@ export function ProductDetailModal({
                   className="w-full h-screen flex items-center justify-center bg-black overflow-hidden"
                 >
                   <img
-                    src={imageUrl}
+                    src={normalizeImageUrl(imageUrl)}
                     alt={`${product.title} - ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
