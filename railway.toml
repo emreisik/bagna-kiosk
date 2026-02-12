@@ -1,63 +1,12 @@
 # ============================================
-# Railway Monorepo Configuration - Nixpacks
-# Explicit paths & build verification
+# Railway Configuration - Simplified
 # ============================================
-
-[build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.setup]
-nixPkgs = ["nodejs-20_x", "npm-10_x"]
-
-[build.nixpacksPlan.phases.install]
-cmds = [
-  "echo '📦 Installing backend dependencies...'",
-  "cd backend && npm ci && cd ..",
-  "echo '📦 Installing frontend dependencies...'",
-  "npm ci"
-]
-
-[build.nixpacksPlan.phases.build]
-cmds = [
-  # Backend build
-  "echo '🔨 Building backend (Prisma + TypeScript)...'",
-  "cd backend && npm run build:prod && cd ..",
-
-  # Backend build verification
-  "echo '🔍 Verifying backend build output...'",
-  "ls -la backend/dist/ || echo '⚠️  backend/dist/ not found!'",
-  "test -f backend/dist/index.js || (echo '❌ ERROR: backend/dist/index.js not found!' && exit 1)",
-  "echo '✅ Backend build verified: backend/dist/index.js exists'",
-
-  # Find all compiled JS files (debug)
-  "echo '📄 Compiled backend files:'",
-  "find backend/dist -maxdepth 2 -name '*.js' -type f | head -10",
-
-  # Frontend build
-  "echo '🔨 Building frontend (Vite)...'",
-  "npm run build",
-
-  # Frontend build verification
-  "echo '🔍 Verifying frontend build output...'",
-  "ls -la dist/ || echo '⚠️  dist/ not found!'",
-  "test -f dist/index.html || (echo '❌ ERROR: dist/index.html not found!' && exit 1)",
-  "echo '✅ Frontend build verified: dist/index.html exists'"
-]
+# Railway default Nixpacks detection kullanır
+# Root package.json "build" script'i otomatik çalışır
 
 [deploy]
-# Explicit start command - no cd, absolute path from /app
 startCommand = "node backend/dist/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 200
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
-
-# ============================================
-# Environment Variables (Railway UI'dan ekle)
-# ============================================
-# DATABASE_URL=postgresql://...
-# NODE_ENV=production
-# JWT_SECRET=<64-char-random>
-# JWT_EXPIRES_IN=7d
-#
-# ⚠️  PORT eklemeyin! Railway otomatik sağlar.
