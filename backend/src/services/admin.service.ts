@@ -25,48 +25,63 @@ export interface CreateProductData {
 export interface UpdateProductData extends Partial<CreateProductData> {}
 
 export async function login(credentials: LoginCredentials) {
-  const admin = await prisma.admin.findUnique({
-    where: { email: credentials.email },
-    include: {
-      brands: {
-        include: {
-          brand: true,
+  try {
+    console.log("🔐 Admin login attempt:", credentials.email);
+
+    const admin = await prisma.admin.findUnique({
+      where: { email: credentials.email },
+      include: {
+        brands: {
+          include: {
+            brand: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!admin) {
-    throw new Error("Invalid credentials");
+    if (!admin) {
+      console.log("❌ Admin not found:", credentials.email);
+      throw new Error("Invalid credentials");
+    }
+
+    console.log("✅ Admin found:", admin.email, "| Role:", admin.role);
+
+    const isValidPassword = await bcrypt.compare(
+      credentials.password,
+      admin.password,
+    );
+
+    if (!isValidPassword) {
+      console.log("❌ Invalid password for:", credentials.email);
+      throw new Error("Invalid credentials");
+    }
+
+    console.log("✅ Password verified for:", credentials.email);
+
+    const token = jwt.sign({ adminId: admin.id }, config.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    console.log("✅ JWT token generated for:", credentials.email);
+
+    return {
+      token,
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role,
+        requiresApproval: admin.requiresApproval,
+        brands: admin.brands.map((b) => ({
+          brandId: b.brand.id,
+          brandName: b.brand.name,
+        })),
+      },
+    };
+  } catch (error) {
+    console.error("❌ Login service error:", error);
+    throw error;
   }
-
-  const isValidPassword = await bcrypt.compare(
-    credentials.password,
-    admin.password,
-  );
-
-  if (!isValidPassword) {
-    throw new Error("Invalid credentials");
-  }
-
-  const token = jwt.sign({ adminId: admin.id }, config.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
-  return {
-    token,
-    admin: {
-      id: admin.id,
-      email: admin.email,
-      name: admin.name,
-      role: admin.role,
-      requiresApproval: admin.requiresApproval,
-      brands: admin.brands.map((b) => ({
-        brandId: b.brand.id,
-        brandName: b.brand.name,
-      })),
-    },
-  };
 }
 
 export async function createProduct(
