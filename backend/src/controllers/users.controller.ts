@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import * as usersService from "../services/users.service.js";
+import { getParam } from "../utils/request.js";
 
 export async function getAllUsers(req: AuthRequest, res: Response) {
   try {
@@ -19,7 +20,7 @@ export async function getAllUsers(req: AuthRequest, res: Response) {
 
 export async function getUser(req: AuthRequest, res: Response) {
   try {
-    const user = await usersService.getUserById(req.params.id);
+    const user = await usersService.getUserById(getParam(req.params.id));
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -45,7 +46,10 @@ export async function createUser(req: AuthRequest, res: Response) {
 
 export async function updateUser(req: AuthRequest, res: Response) {
   try {
-    const user = await usersService.updateUser(req.params.id, req.body);
+    const user = await usersService.updateUser(
+      getParam(req.params.id),
+      req.body,
+    );
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -60,7 +64,7 @@ export async function updateUser(req: AuthRequest, res: Response) {
 
 export async function deleteUser(req: AuthRequest, res: Response) {
   try {
-    await usersService.deleteUser(req.params.id);
+    await usersService.deleteUser(getParam(req.params.id));
     res.json({ message: "User deleted successfully" });
   } catch (error) {
     console.error("Delete user error:", error);

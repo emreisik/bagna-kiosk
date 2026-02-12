@@ -16,6 +16,10 @@
     "db:generate": "prisma generate",
     "db:migrate-manual": "tsx scripts/migrate-db.ts"
   },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "keywords": [
     "kiosk",
     "api",

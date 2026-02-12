@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import * as categoriesService from "../services/categories.service.js";
+import { getParam } from "../utils/request.js";
 
 // Category controllers
 export async function createCategory(req: AuthRequest, res: Response) {
@@ -16,7 +17,7 @@ export async function createCategory(req: AuthRequest, res: Response) {
 export async function updateCategory(req: AuthRequest, res: Response) {
   try {
     const category = await categoriesService.updateCategory(
-      req.params.id,
+      getParam(req.params.id),
       req.body,
     );
     res.json(category);
@@ -28,7 +29,7 @@ export async function updateCategory(req: AuthRequest, res: Response) {
 
 export async function deleteCategory(req: AuthRequest, res: Response) {
   try {
-    await categoriesService.deleteCategory(req.params.id);
+    await categoriesService.deleteCategory(getParam(req.params.id));
     res.json({ message: "Category deleted successfully" });
   } catch (error) {
     console.error("Delete category error:", error);
@@ -50,7 +51,7 @@ export async function createSubcategory(req: AuthRequest, res: Response) {
 export async function updateSubcategory(req: AuthRequest, res: Response) {
   try {
     const subcategory = await categoriesService.updateSubcategory(
-      req.params.id,
+      getParam(req.params.id),
       req.body,
     );
     res.json(subcategory);
@@ -62,7 +63,7 @@ export async function updateSubcategory(req: AuthRequest, res: Response) {
 
 export async function deleteSubcategory(req: AuthRequest, res: Response) {
   try {
-    await categoriesService.deleteSubcategory(req.params.id);
+    await categoriesService.deleteSubcategory(getParam(req.params.id));
     res.json({ message: "Subcategory deleted successfully" });
   } catch (error) {
     console.error("Delete subcategory error:", error);

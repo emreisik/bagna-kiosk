@@ -3,6 +3,7 @@ import * as adminService from "../services/admin.service.js";
 import * as productsService from "../services/products.service.js";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import { prisma } from "../config/database.js";
+import { getParam } from "../utils/request.js";
 
 export async function loginHandler(req: Request, res: Response) {
   try {
@@ -144,7 +145,7 @@ export async function createProductHandler(req: AuthRequest, res: Response) {
 
 export async function updateProductHandler(req: AuthRequest, res: Response) {
   try {
-    const { id } = req.params;
+    const id = getParam(req.params.id);
     const adminId = req.adminId;
 
     if (!adminId) {
@@ -217,7 +218,7 @@ export async function updateProductHandler(req: AuthRequest, res: Response) {
 
 export async function deleteProductHandler(req: AuthRequest, res: Response) {
   try {
-    const { id } = req.params;
+    const id = getParam(req.params.id);
     await adminService.deleteProduct(id);
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
@@ -228,7 +229,7 @@ export async function deleteProductHandler(req: AuthRequest, res: Response) {
 
 export async function approveProductHandler(req: AuthRequest, res: Response) {
   try {
-    const { id } = req.params;
+    const id = getParam(req.params.id);
     const adminId = req.adminId;
 
     if (!adminId) {
@@ -264,7 +265,7 @@ export async function approveProductHandler(req: AuthRequest, res: Response) {
 
 export async function rejectProductHandler(req: AuthRequest, res: Response) {
   try {
-    const { id } = req.params;
+    const id = getParam(req.params.id);
     const adminId = req.adminId;
 
     if (!adminId) {

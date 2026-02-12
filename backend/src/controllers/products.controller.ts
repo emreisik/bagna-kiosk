@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as productsService from "../services/products.service.js";
 import * as similarityService from "../services/similarity.service.js";
+import { getParam } from "../utils/request.js";
 
 export async function getAllProducts(req: Request, res: Response) {
   const { category, subcategory, search, page, limit } = req.query;
@@ -17,7 +18,7 @@ export async function getAllProducts(req: Request, res: Response) {
 }
 
 export async function getProductById(req: Request, res: Response) {
-  const product = await productsService.getProductById(req.params.id);
+  const product = await productsService.getProductById(getParam(req.params.id));
 
   if (!product) {
     return res.status(404).json({ error: "Product not found" });
@@ -27,7 +28,7 @@ export async function getProductById(req: Request, res: Response) {
 }
 
 export async function getSimilarProducts(req: Request, res: Response) {
-  const product = await productsService.getProductById(req.params.id);
+  const product = await productsService.getProductById(getParam(req.params.id));
 
   if (!product) {
     return res.status(404).json({ error: "Product not found" });

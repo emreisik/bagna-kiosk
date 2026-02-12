@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import * as brandsService from "../services/brands.service.js";
+import { getParam } from "../utils/request.js";
 
 export async function getAllBrands(req: AuthRequest, res: Response) {
   try {
@@ -14,7 +15,7 @@ export async function getAllBrands(req: AuthRequest, res: Response) {
 
 export async function getBrand(req: AuthRequest, res: Response) {
   try {
-    const brand = await brandsService.getBrandById(req.params.id);
+    const brand = await brandsService.getBrandById(getParam(req.params.id));
     if (!brand) {
       res.status(404).json({ message: "Brand not found" });
       return;
@@ -40,7 +41,7 @@ export async function createBrand(req: AuthRequest, res: Response) {
 export async function updateBrand(req: AuthRequest, res: Response) {
   try {
     const { name, logo } = req.body;
-    const brand = await brandsService.updateBrand(req.params.id, {
+    const brand = await brandsService.updateBrand(getParam(req.params.id), {
       name,
       logo,
     });
@@ -53,7 +54,7 @@ export async function updateBrand(req: AuthRequest, res: Response) {
 
 export async function deleteBrand(req: AuthRequest, res: Response) {
   try {
-    await brandsService.deleteBrand(req.params.id);
+    await brandsService.deleteBrand(getParam(req.params.id));
     res.json({ message: "Brand deleted successfully" });
   } catch (error) {
     console.error("Delete brand error:", error);
@@ -74,7 +75,7 @@ export async function getAllBrandsPublic(req: any, res: Response) {
 
 export async function getBrandBySlug(req: any, res: Response) {
   try {
-    const brand = await brandsService.getBrandBySlug(req.params.slug);
+    const brand = await brandsService.getBrandBySlug(getParam(req.params.slug));
     if (!brand) {
       res.status(404).json({ message: "Brand not found" });
       return;

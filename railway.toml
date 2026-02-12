@@ -1,12 +1,38 @@
-# Railway Configuration for Frontend Service
-# https://docs.railway.app/deploy/config-as-code
+# Railway Configuration - Monorepo (Backend + Frontend)
+# Tek Railway service'te hem backend hem frontend çalışır
 
 [build]
 builder = "nixpacks"
 
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs-20_x", "npm-10_x"]
+
+[build.nixpacksPlan.phases.install]
+cmds = [
+  "cd backend && npm ci && cd ..",
+  "npm ci"
+]
+
+[build.nixpacksPlan.phases.build]
+cmds = [
+  "cd backend && npx prisma generate && npx prisma migrate deploy && npm run build && cd ..",
+  "npm run build"
+]
+
 [deploy]
-startCommand = "npm run start"
-healthcheckPath = "/"
-healthcheckTimeout = 100
+startCommand = "cd backend && npm start & sleep 5 && cd .. && npm run preview -- --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+healthcheckTimeout = 200
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
+
+# Environment Variables (Railway UI'dan eklenecek):
+# Backend için:
+# - DATABASE_URL (Neon PostgreSQL connection string)
+# - JWT_SECRET (min 64 karakter random string - node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+# - JWT_EXPIRES_IN=7d
+# - NODE_ENV=production
+# - FRONTEND_URL=http://localhost:$PORT
+#
+# Frontend için:
+# - VITE_API_URL=http://localhost:3001 (backend localhost:3001'de çalışıyor)

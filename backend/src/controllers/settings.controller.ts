@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import * as settingsService from "../services/settings.service.js";
+import { getParam } from "../utils/request.js";
 
 export async function getAllSettings(req: AuthRequest, res: Response) {
   try {
@@ -14,7 +15,9 @@ export async function getAllSettings(req: AuthRequest, res: Response) {
 
 export async function getSetting(req: AuthRequest, res: Response) {
   try {
-    const setting = await settingsService.getSettingByKey(req.params.key);
+    const setting = await settingsService.getSettingByKey(
+      getParam(req.params.key),
+    );
     if (!setting) {
       res.status(404).json({ message: "Setting not found" });
       return;
@@ -39,7 +42,7 @@ export async function upsertSetting(req: AuthRequest, res: Response) {
 
 export async function deleteSetting(req: AuthRequest, res: Response) {
   try {
-    await settingsService.deleteSetting(req.params.key);
+    await settingsService.deleteSetting(getParam(req.params.key));
     res.json({ message: "Setting deleted successfully" });
   } catch (error) {
     console.error("Delete setting error:", error);
