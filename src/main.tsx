@@ -14,29 +14,17 @@ const queryClient = new QueryClient({
   },
 });
 
-// Register Service Worker for PWA
+// Register Service Worker for PWA — otomatik güncelleme, anında aktif
 const updateSW = registerSW({
+  immediate: true,
   onNeedRefresh() {
-    console.log("PWA: New content available, please refresh.");
-  },
-  onOfflineReady() {
-    console.log("PWA: App ready to work offline");
-  },
-  onRegistered(registration) {
-    console.log("PWA: Service Worker registered", registration);
-  },
-  onRegisterError(error) {
-    console.error("PWA: Service Worker registration failed", error);
-  },
-});
-
-// Auto-update every hour
-setInterval(
-  () => {
+    // Yeni versiyon mevcut, otomatik güncelle
     updateSW(true);
   },
-  60 * 60 * 1000,
-);
+  onRegisterError(error) {
+    console.error("SW registration failed:", error);
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
