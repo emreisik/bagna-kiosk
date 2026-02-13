@@ -100,7 +100,7 @@ export async function createApp(): Promise<Express> {
 
   // Dedicated kill endpoint: GET /api/kill-sw
   app.get("/api/kill-sw", (_req, res) => {
-    res.setHeader("Clear-Site-Data", '"cache", "executionContexts"');
+    res.setHeader("Clear-Site-Data", '"cache", "storage"');
     res.setHeader("Cache-Control", "no-store");
     res.json({
       status: "ok",
@@ -112,7 +112,7 @@ export async function createApp(): Promise<Express> {
   // API middleware: tüm /api/* yanıtlarına Clear-Site-Data ekle
   if (swCleanupActive) {
     app.use("/api", (_req, res, next) => {
-      res.setHeader("Clear-Site-Data", '"cache", "executionContexts"');
+      res.setHeader("Clear-Site-Data", '"cache", "storage"');
       res.setHeader("Cache-Control", "no-store");
       next();
     });
@@ -138,7 +138,7 @@ export async function createApp(): Promise<Express> {
 
     // SW kill-switch: cache temizle + execution context öldür + yeni SW kendini unregister etsin
     app.get("/sw.js", (_req, res) => {
-      res.setHeader("Clear-Site-Data", '"cache", "executionContexts"');
+      res.setHeader("Clear-Site-Data", '"cache", "storage"');
       res.setHeader("Cache-Control", "no-store");
       res.setHeader("Content-Type", "application/javascript");
       res.sendFile(path.join(frontendDistPath, "sw.js"));
