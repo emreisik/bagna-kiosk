@@ -11,22 +11,6 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
   <title>Kiosk QR - Katalog</title>
-
-  <!-- Eski SW temizliği (bir süre sonra kaldırılabilir) -->
-  <script>
-    (function() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(r) {
-          r.forEach(function(s) { s.unregister(); });
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(n) {
-          n.forEach(function(k) { caches.delete(k); });
-        });
-      }
-    })();
-  </script>
 </head>
 
 <body>
