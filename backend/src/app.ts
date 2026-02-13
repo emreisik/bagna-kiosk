@@ -73,18 +73,6 @@ export async function createApp(): Promise<Express> {
   };
 
   app.use(cors(corsOptions));
-
-  // Geçici: Eski Service Worker cache temizliği (2026-02-21'e kadar aktif, sonra silinebilir)
-  // Clear-Site-Data: "cache" → HTTP cache + Cache API (SW cache) temizler
-  // localStorage/cookies'e dokunmaz, sadece cache silinir
-  const SW_CLEANUP_DEADLINE = new Date("2026-02-21T00:00:00Z").getTime();
-  if (config.NODE_ENV === "production" && Date.now() < SW_CLEANUP_DEADLINE) {
-    app.use((_req, res, next) => {
-      res.setHeader("Clear-Site-Data", '"cache"');
-      next();
-    });
-  }
-
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -97,13 +85,39 @@ export async function createApp(): Promise<Express> {
   );
 
   // Health check
-  app.get("/health", (req, res) => {
+  app.get("/health", (_req, res) => {
     res.json({
       status: "ok",
       timestamp: new Date().toISOString(),
       env: config.NODE_ENV,
     });
   });
+
+  // --- Geçici: Eski SW öldürme (2026-02-21'e kadar, sonra bu blok silinebilir) ---
+  const SW_CLEANUP_DEADLINE = new Date("2026-02-21T00:00:00Z").getTime();
+  const swCleanupActive =
+    config.NODE_ENV === "production" && Date.now() < SW_CLEANUP_DEADLINE;
+
+  // Dedicated kill endpoint: GET /api/kill-sw
+  app.get("/api/kill-sw", (_req, res) => {
+    res.setHeader("Clear-Site-Data", '"cache", "executionContexts"');
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      status: "ok",
+      message: "Service Worker killed",
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  // API middleware: tüm /api/* yanıtlarına Clear-Site-Data ekle
+  if (swCleanupActive) {
+    app.use("/api", (_req, res, next) => {
+      res.setHeader("Clear-Site-Data", '"cache", "executionContexts"');
+      res.setHeader("Cache-Control", "no-store");
+      next();
+    });
+  }
+  // --- Geçici blok sonu ---
 
   // API Routes
   const routes = await import("./routes/index.js");
@@ -122,8 +136,9 @@ export async function createApp(): Promise<Express> {
       }),
     );
 
-    // SW kill-switch: asla cache'lenmesin, tarayıcı her zaman güncel versiyonu alsın
+    // SW kill-switch: cache temizle + execution context öldür + yeni SW kendini unregister etsin
     app.get("/sw.js", (_req, res) => {
+      res.setHeader("Clear-Site-Data", '"cache", "executionContexts"');
       res.setHeader("Cache-Control", "no-store");
       res.setHeader("Content-Type", "application/javascript");
       res.sendFile(path.join(frontendDistPath, "sw.js"));
