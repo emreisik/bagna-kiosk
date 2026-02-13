@@ -7,29 +7,22 @@
   <meta name="description" content="Kiosk QR - Premium minimal kiosk katalog deneyimi" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- PWA Meta Tags -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Kiosk QR" />
-
-  <!-- Icons -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
   <title>Kiosk QR - Katalog</title>
 
-  <!-- Tek seferlik: Eski SW ve cache temizliği (SW kaldırıldı, artık kayıt yapılmıyor) -->
+  <!-- Eski SW temizliği (bir süre sonra kaldırılabilir) -->
   <script>
     (function() {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(regs) {
-          regs.forEach(function(r) { r.unregister(); });
+        navigator.serviceWorker.getRegistrations().then(function(r) {
+          r.forEach(function(s) { s.unregister(); });
         });
       }
       if ('caches' in window) {
-        caches.keys().then(function(names) {
-          names.forEach(function(name) { caches.delete(name); });
+        caches.keys().then(function(n) {
+          n.forEach(function(k) { caches.delete(k); });
         });
       }
     })();

@@ -6,7 +6,7 @@ import "./styles/index.css";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 0,
       staleTime: 60 * 1000, // 1 dakika
       refetchOnWindowFocus: false,
     },

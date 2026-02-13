@@ -110,37 +110,23 @@ export async function createApp(): Promise<Express> {
       }),
     );
 
-    // Root static files (favicon, manifest, sw.js): kısa cache
-    app.use(
-      express.static(frontendDistPath, {
-        maxAge: 0,
-        setHeaders: (res, filePath) => {
-          // SW ve manifest her zaman taze olmalı
-          if (filePath.endsWith("sw.js") || filePath.endsWith(".webmanifest")) {
-            res.setHeader(
-              "Cache-Control",
-              "no-cache, no-store, must-revalidate",
-            );
-          }
-        },
-      }),
-    );
+    // Root static files (favicon, robots.txt)
+    app.use(express.static(frontendDistPath, { maxAge: "1d" }));
 
-    // SPA fallback - sadece navigation istekleri (dosya uzantısı olmayanlar)
+    // SPA fallback
     app.get("*", (req, res) => {
-      // Dosya uzantısı olan istekleri 404 yap (eski hash'li asset'ler)
-      if (req.path.includes(".") && req.path.startsWith("/assets/")) {
-        res.status(404).send("Asset not found");
+      if (req.path.startsWith("/assets/") && req.path.includes(".")) {
+        res.status(404).end();
         return;
       }
 
       const indexPath = path.join(frontendDistPath, "index.html");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Cache-Control", "no-store");
       res.sendFile(indexPath, (err) => {
         if (err) {
-          console.error("❌ Failed to send index.html:", err);
-          res.status(404).send("Frontend not found. Build may have failed.");
+          console.error("Failed to send index.html:", err);
+          res.status(404).send("Frontend not found.");
         }
       });
     });
