@@ -61,15 +61,16 @@ export async function createApp(): Promise<Express> {
           callback(new Error("Not allowed by CORS"));
         }
       } else {
-        // Production: FRONTEND_URL veya aynı domain izinli
-        if (config.FRONTEND_URL && origin === config.FRONTEND_URL) {
-          callback(null, true);
-        } else {
-          // Railway domain'i otomatik algıla - same-origin crossorigin istekleri için
+        // Production: same-origin setup (backend frontend'i serve eder)
+        // FRONTEND_URL set edilmişse sadece o origin izinli, yoksa tüm origin'lere izin ver
+        // Güvenlik JWT authentication ile sağlanır, CORS ek katman
+        if (config.FRONTEND_URL && origin !== config.FRONTEND_URL) {
           console.warn(
-            `⚠️ CORS: origin=${origin} reddedildi (FRONTEND_URL=${config.FRONTEND_URL || "YOK"})`,
+            `⚠️ CORS: origin=${origin} reddedildi (FRONTEND_URL=${config.FRONTEND_URL})`,
           );
           callback(new Error("Not allowed by CORS"));
+        } else {
+          callback(null, true);
         }
       }
     },
