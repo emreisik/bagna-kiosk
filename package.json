@@ -7,10 +7,10 @@
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd backend && npm run build:prod",
     "build:frontend": "vite build",
+    "postinstall": "cd backend && npm ci",
     "dev": "vite",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0",
-    "preinstall": "cd backend && npm ci"
+    "start": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -72,7 +72,9 @@
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
     "tailwindcss": "4.1.12",
-    "vite": "6.3.5"
+    "vite": "6.3.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {},
   "engines": {
