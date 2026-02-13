@@ -14,6 +14,7 @@ import {
   Grid3x3,
   RefreshCw,
 } from "lucide-react";
+import { normalizeImageUrl } from "../../utils/imageUrl";
 
 type TabType = "general" | "product-display" | "attract-mode";
 
@@ -855,7 +856,7 @@ export function AdminSettingsPage() {
                             className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-all"
                           >
                             <img
-                              src={imageUrl}
+                              src={normalizeImageUrl(imageUrl)}
                               alt={`Slideshow ${index + 1}`}
                               className="w-full h-full object-cover"
                             />

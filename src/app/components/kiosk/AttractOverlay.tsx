@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Language } from "../../../i18n/translations";
 import { QrCode } from "lucide-react";
 import { useNavigate } from "react-router";
+import { normalizeImageUrl } from "../../../utils/imageUrl";
 
 interface AttractOverlayProps {
   screensaverLogo?: string;
@@ -354,7 +355,7 @@ export function AttractOverlay({
               }}
             >
               <img
-                src={allProductImages[currentProductIndex]}
+                src={normalizeImageUrl(allProductImages[currentProductIndex])}
                 alt={`Slide ${currentProductIndex + 1}`}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -381,10 +382,11 @@ export function AttractOverlay({
             {allProductImages.slice(0, 10).map((_, index) => (
               <div
                 key={index}
-                className={`h-1 rounded-full transition-all duration-300 ${index === currentProductIndex % 10
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  index === currentProductIndex % 10
                     ? "w-8 bg-white"
                     : "w-1 bg-white/30"
-                  }`}
+                }`}
               />
             ))}
           </div>

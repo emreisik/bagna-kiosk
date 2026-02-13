@@ -15,6 +15,7 @@ import { useProducts, useSimilarProducts } from "../../hooks/useProducts";
 import { useCategories } from "../../hooks/useCategories";
 import { useSettings } from "../../hooks/useSettings";
 import { CategoryStructure } from "../../data/categories";
+import { normalizeImageUrl } from "../../utils/imageUrl";
 
 export function ProductsPage() {
   const { t, language, setLanguage, availableLanguages } = useI18n();
@@ -104,7 +105,7 @@ export function ProductsPage() {
           <div className="flex-1 flex justify-center md:justify-center">
             {settings?.site_logo ? (
               <img
-                src={settings.site_logo}
+                src={normalizeImageUrl(settings.site_logo)}
                 alt={settings?.site_name || "Kiosk QR"}
                 className="w-32 h-auto md:w-auto md:h-7 lg:h-8"
               />

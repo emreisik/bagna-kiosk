@@ -5,6 +5,7 @@ import { AdminLayout } from "../components/admin/AdminLayout";
 import { useCategories } from "../../hooks/useCategories";
 import { apiClient } from "../../services/api";
 import { X, ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { normalizeImageUrl } from "../../utils/imageUrl";
 
 export function AdminProductFormPage() {
   const navigate = useNavigate();
@@ -337,7 +338,7 @@ export function AdminProductFormPage() {
                         </div>
                       )}
                       <img
-                        src={url}
+                        src={normalizeImageUrl(url)}
                         alt={`Görsel ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />

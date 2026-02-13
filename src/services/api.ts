@@ -472,12 +472,8 @@ class ApiClient {
     }
 
     const data = await response.json();
-    // Relative path'i full URL'e çevir
-    const baseUrl = this.baseUrl.replace("/api", "");
-    return {
-      ...data,
-      url: `${baseUrl}${data.url}`,
-    };
+    // Relative path olarak döndür (Vite proxy dev'de, Express prod'da handle eder)
+    return data;
   }
 
   async uploadMultipleImages(
@@ -512,14 +508,8 @@ class ApiClient {
     }
 
     const data = await response.json();
-    // Relative path'leri full URL'e çevir
-    const baseUrl = this.baseUrl.replace("/api", "");
-    return {
-      images: data.images.map((img: any) => ({
-        ...img,
-        url: `${baseUrl}${img.url}`,
-      })),
-    };
+    // Relative path olarak döndür (Vite proxy dev'de, Express prod'da handle eder)
+    return data;
   }
 
   // Settings Admin

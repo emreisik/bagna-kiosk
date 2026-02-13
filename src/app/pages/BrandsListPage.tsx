@@ -5,6 +5,7 @@ import { useIdleTimer } from "../../hooks/useIdleTimer";
 import { kioskConfig } from "../../config/kiosk.config";
 import { AttractOverlay } from "../components/kiosk/AttractOverlay";
 import { AnimatePresence, motion } from "motion/react";
+import { normalizeImageUrl } from "../../utils/imageUrl";
 
 export function BrandsListPage() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export function BrandsListPage() {
         <div className="max-w-[2000px] mx-auto mb-8 md:mb-12 lg:mb-16 flex justify-center">
           {settings?.site_logo ? (
             <img
-              src={settings.site_logo}
+              src={normalizeImageUrl(settings.site_logo)}
               alt={settings?.site_name || "Kiosk QR"}
               className="w-40 h-auto md:w-auto md:h-10 lg:h-12"
             />
@@ -63,7 +64,7 @@ export function BrandsListPage() {
                   {brand.logo ? (
                     <div className="absolute inset-0 flex items-center justify-center p-6 md:p-8 lg:p-10">
                       <img
-                        src={brand.logo}
+                        src={normalizeImageUrl(brand.logo)}
                         alt={brand.name}
                         className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
                       />

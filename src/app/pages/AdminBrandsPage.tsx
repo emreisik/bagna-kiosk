@@ -12,6 +12,7 @@ import {
   Check,
 } from "lucide-react";
 import { Modal, ModalFooter } from "../components/ui/Modal";
+import { normalizeImageUrl } from "../../utils/imageUrl";
 
 export function AdminBrandsPage() {
   const [brands, setBrands] = useState<any[]>([]);
@@ -148,7 +149,7 @@ export function AdminBrandsPage() {
                 {brand.logo ? (
                   <div className="w-full h-32 mb-4 bg-gray-50 rounded-lg flex items-center justify-center p-4">
                     <img
-                      src={brand.logo}
+                      src={normalizeImageUrl(brand.logo)}
                       alt={brand.name}
                       className="max-w-full max-h-full object-contain"
                     />
@@ -302,7 +303,7 @@ export function AdminBrandsPage() {
                     </p>
                     <div className="bg-white p-4 rounded-lg flex items-center justify-center min-h-[120px] mb-3">
                       <img
-                        src={formData.logo}
+                        src={normalizeImageUrl(formData.logo)}
                         alt="Logo preview"
                         className="max-h-24 object-contain"
                       />
