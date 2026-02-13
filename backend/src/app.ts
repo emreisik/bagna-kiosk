@@ -73,6 +73,18 @@ export async function createApp(): Promise<Express> {
   };
 
   app.use(cors(corsOptions));
+
+  // Geçici: Eski Service Worker cache temizliği (2026-02-21'e kadar aktif, sonra silinebilir)
+  // Clear-Site-Data: "cache" → HTTP cache + Cache API (SW cache) temizler
+  // localStorage/cookies'e dokunmaz, sadece cache silinir
+  const SW_CLEANUP_DEADLINE = new Date("2026-02-21T00:00:00Z").getTime();
+  if (config.NODE_ENV === "production" && Date.now() < SW_CLEANUP_DEADLINE) {
+    app.use((_req, res, next) => {
+      res.setHeader("Clear-Site-Data", '"cache"');
+      next();
+    });
+  }
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
