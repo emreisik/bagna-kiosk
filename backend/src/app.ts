@@ -93,32 +93,6 @@ export async function createApp(): Promise<Express> {
     });
   });
 
-  // --- Geçici: Eski SW öldürme (2026-02-21'e kadar, sonra bu blok silinebilir) ---
-  const SW_CLEANUP_DEADLINE = new Date("2026-02-21T00:00:00Z").getTime();
-  const swCleanupActive =
-    config.NODE_ENV === "production" && Date.now() < SW_CLEANUP_DEADLINE;
-
-  // Dedicated kill endpoint: GET /api/kill-sw
-  app.get("/api/kill-sw", (_req, res) => {
-    res.setHeader("Clear-Site-Data", '"cache", "storage"');
-    res.setHeader("Cache-Control", "no-store");
-    res.json({
-      status: "ok",
-      message: "Service Worker killed",
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  // API middleware: tüm /api/* yanıtlarına Clear-Site-Data ekle
-  if (swCleanupActive) {
-    app.use("/api", (_req, res, next) => {
-      res.setHeader("Clear-Site-Data", '"cache", "storage"');
-      res.setHeader("Cache-Control", "no-store");
-      next();
-    });
-  }
-  // --- Geçici blok sonu ---
-
   // API Routes
   const routes = await import("./routes/index.js");
   app.use("/api", routes.default);
@@ -127,36 +101,22 @@ export async function createApp(): Promise<Express> {
   if (config.NODE_ENV === "production") {
     const frontendDistPath = path.join(__dirname, "../../dist");
 
-    // Hashed assets: immutable cache (dosya adı hash içerir, sonsuza kadar cache'lenebilir)
+    // Hashed assets: 1 saat cache, hata olursa kendini düzeltir
     app.use(
       "/assets",
       express.static(path.join(frontendDistPath, "assets"), {
-        maxAge: "1y",
-        immutable: true,
+        maxAge: "1h",
       }),
     );
 
-    // SW kill-switch: cache temizle + execution context öldür + yeni SW kendini unregister etsin
-    app.get("/sw.js", (_req, res) => {
-      res.setHeader("Clear-Site-Data", '"cache", "storage"');
-      res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Content-Type", "application/javascript");
-      res.sendFile(path.join(frontendDistPath, "sw.js"));
-    });
-
-    // Root static files (favicon, robots.txt)
-    app.use(express.static(frontendDistPath, { maxAge: "1d" }));
+    // Root static files (favicon, robots.txt, sw.js)
+    app.use(express.static(frontendDistPath, { maxAge: "1h" }));
 
     // SPA fallback
-    app.get("*", (req, res) => {
-      if (req.path.startsWith("/assets/") && req.path.includes(".")) {
-        res.status(404).end();
-        return;
-      }
-
+    app.get("*", (_req, res) => {
       const indexPath = path.join(frontendDistPath, "index.html");
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Cache-Control", "no-cache");
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error("Failed to send index.html:", err);
