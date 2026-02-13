@@ -110,6 +110,13 @@ export async function createApp(): Promise<Express> {
       }),
     );
 
+    // SW kill-switch: asla cache'lenmesin, tarayıcı her zaman güncel versiyonu alsın
+    app.get("/sw.js", (_req, res) => {
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Content-Type", "application/javascript");
+      res.sendFile(path.join(frontendDistPath, "sw.js"));
+    });
+
     // Root static files (favicon, robots.txt)
     app.use(express.static(frontendDistPath, { maxAge: "1d" }));
 
