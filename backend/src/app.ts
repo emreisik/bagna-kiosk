@@ -76,8 +76,13 @@ export async function createApp(): Promise<Express> {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Static files - uploaded images
-  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+  // Static files - uploaded images (30 gün cache, görseller nadiren değişir)
+  app.use(
+    "/uploads",
+    express.static(path.join(__dirname, "../uploads"), {
+      maxAge: "30d",
+    }),
+  );
 
   // Health check
   app.get("/health", (req, res) => {
@@ -95,22 +100,6 @@ export async function createApp(): Promise<Express> {
   // Frontend static files (Production only)
   if (config.NODE_ENV === "production") {
     const frontendDistPath = path.join(__dirname, "../../dist");
-
-    // Clear-Site-Data: Eski bozuk SW cache'lerini sunucu tarafından temizle
-    // Tarayıcı bu header'ı gördüğünde tüm cache/storage'ı siler
-    // NOT: Tüm client'lar temizlendikten sonra bu blok kaldırılabilir
-    app.use((req, res, next) => {
-      // Sadece HTML navigation isteklerinde tetikle (asset'lere dokunma)
-      const accept = req.headers.accept || "";
-      if (
-        accept.includes("text/html") &&
-        !req.path.startsWith("/api/") &&
-        !req.path.startsWith("/uploads/")
-      ) {
-        res.setHeader("Clear-Site-Data", '"cache", "storage"');
-      }
-      next();
-    });
 
     // Hashed assets: immutable cache (dosya adı hash içerir, sonsuza kadar cache'lenebilir)
     app.use(
