@@ -96,50 +96,42 @@ export async function createApp(): Promise<Express> {
   if (config.NODE_ENV === "production") {
     const frontendDistPath = path.join(__dirname, "../../dist");
 
-    // Static files with proper MIME types
+    // Hashed assets: immutable cache (dosya adı hash içerir, sonsuza kadar cache'lenebilir)
+    app.use(
+      "/assets",
+      express.static(path.join(frontendDistPath, "assets"), {
+        maxAge: "1y",
+        immutable: true,
+      }),
+    );
+
+    // Root static files (favicon, manifest, sw.js): kısa cache
     app.use(
       express.static(frontendDistPath, {
+        maxAge: 0,
         setHeaders: (res, filePath) => {
-          if (!filePath || typeof filePath !== "string") return;
-
-          // Set correct MIME types based on file extension
-          const lowerPath = filePath.toLowerCase();
-          if (lowerPath.endsWith(".js")) {
+          // SW ve manifest her zaman taze olmalı
+          if (filePath.endsWith("sw.js") || filePath.endsWith(".webmanifest")) {
             res.setHeader(
-              "Content-Type",
-              "application/javascript; charset=utf-8",
+              "Cache-Control",
+              "no-cache, no-store, must-revalidate",
             );
-          } else if (lowerPath.endsWith(".css")) {
-            res.setHeader("Content-Type", "text/css; charset=utf-8");
-          } else if (lowerPath.endsWith(".png")) {
-            res.setHeader("Content-Type", "image/png");
-          } else if (
-            lowerPath.endsWith(".jpg") ||
-            lowerPath.endsWith(".jpeg")
-          ) {
-            res.setHeader("Content-Type", "image/jpeg");
-          } else if (lowerPath.endsWith(".svg")) {
-            res.setHeader("Content-Type", "image/svg+xml");
-          } else if (
-            lowerPath.endsWith(".woff") ||
-            lowerPath.endsWith(".woff2")
-          ) {
-            res.setHeader("Content-Type", "font/woff2");
-          } else if (lowerPath.endsWith(".json")) {
-            res.setHeader("Content-Type", "application/json");
-          } else if (lowerPath.endsWith(".html")) {
-            res.setHeader("Content-Type", "text/html; charset=utf-8");
           }
         },
       }),
     );
 
-    // SPA fallback - tüm route'lar index.html'e yönlendirilir
-    app.get("*", (req, res, next) => {
+    // SPA fallback - sadece navigation istekleri (dosya uzantısı olmayanlar)
+    app.get("*", (req, res) => {
+      // Dosya uzantısı olan istekleri 404 yap (eski hash'li asset'ler)
+      if (req.path.includes(".") && req.path.startsWith("/assets/")) {
+        res.status(404).send("Asset not found");
+        return;
+      }
+
       const indexPath = path.join(frontendDistPath, "index.html");
-
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-
+      res.setHeader("Cache-Control", "no-cache");
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error("❌ Failed to send index.html:", err);

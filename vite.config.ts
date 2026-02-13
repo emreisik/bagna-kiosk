@@ -54,24 +54,19 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}"],
-        // navigateFallback: "/offline.html", // Devre dışı - offline mode istenmiyor
-        // navigateFallbackDenylist: [/^\/api\//],
+        cleanupOutdatedCaches: true,
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//, /^\/health/],
         runtimeCaching: [
-          // API Endpoints - Network First with fallback
+          // API Endpoints - Network First
           {
-            urlPattern: ({ url }) => {
-              return (
-                url.origin === self.location.origin &&
-                url.pathname.startsWith("/api/")
-              );
-            },
+            urlPattern: /^\/api\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 5, // 5 minutes
+                maxAgeSeconds: 60 * 5,
               },
               networkTimeoutSeconds: 10,
               cacheableResponse: {
@@ -79,31 +74,35 @@ export default defineConfig({
               },
             },
           },
-          // Product Images - Cache First
+          // Uploaded product images - Network First (stale data tehlikeli)
           {
-            urlPattern:
-              /^https:\/\/(via\.placeholder\.com|images\.unsplash\.com|.*)\/(.*)\.(jpg|jpeg|png|webp|gif)$/i,
-            handler: "CacheFirst",
+            urlPattern: /\/uploads\/.+\.(jpg|jpeg|png|webp|gif)$/i,
+            handler: "NetworkFirst",
             options: {
-              cacheName: "product-images-cache",
+              cacheName: "upload-images-cache",
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 gün
               },
+              networkTimeoutSeconds: 5,
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
           },
-          // QR Code API - Network First
+          // External images (placeholder, unsplash) - Cache First
           {
-            urlPattern: /^https:\/\/api\.qrserver\.com\/.*/i,
-            handler: "NetworkFirst",
+            urlPattern:
+              /^https:\/\/(via\.placeholder\.com|images\.unsplash\.com)\/.*/i,
+            handler: "CacheFirst",
             options: {
-              cacheName: "qr-code-cache",
+              cacheName: "external-images-cache",
               expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
           },
@@ -115,7 +114,7 @@ export default defineConfig({
               cacheName: "google-fonts-cache",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },
@@ -126,7 +125,7 @@ export default defineConfig({
               cacheName: "google-fonts-webfonts",
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },
