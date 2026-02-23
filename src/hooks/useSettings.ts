@@ -16,6 +16,7 @@ interface Settings {
   currency: string;
   show_product_info_on_cards: boolean; // Kart üzerinde ürün bilgisi göster
   product_info_position: "overlay" | "below"; // Bilgi pozisyonu: görsel üzerinde veya altında
+  logo_width: number; // Logo genişliği (px)
   cache_version: string; // Cache version timestamp
 }
 
@@ -51,6 +52,9 @@ export function useSettings() {
           settingsObj.show_product_info_on_cards === "true",
         product_info_position: (settingsObj.product_info_position ||
           "below") as "overlay" | "below",
+        logo_width: settingsObj.logo_width
+          ? parseInt(settingsObj.logo_width)
+          : 144,
         cache_version: settingsObj.cache_version || "0",
       };
     },

@@ -179,12 +179,13 @@ export function BrandPage() {
           <div className="flex-1 hidden md:block"></div>
 
           {/* Centered Logo or Brand Name */}
-          <div className="flex-1 flex justify-center md:justify-center">
+          <div className="flex-1 flex justify-start md:justify-center">
             {settings?.site_logo ? (
               <img
                 src={normalizeImageUrl(settings.site_logo)}
                 alt={settings?.site_name || "Kiosk QR"}
-                className="w-36 h-auto md:w-auto md:h-8 lg:h-10"
+                style={{ width: settings.logo_width || 144 }}
+                className="h-auto object-contain"
               />
             ) : (
               <h1 className="text-lg md:text-xl lg:text-2xl font-light tracking-[0.2em] md:tracking-[0.3em] text-black">

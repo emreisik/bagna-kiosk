@@ -32,6 +32,7 @@ export function AdminSettingsPage() {
     grid_columns_kiosk: 3,
     show_product_info_on_cards: false,
     product_info_position: "below" as "overlay" | "below",
+    logo_width: 144,
     slideshow_images: [] as string[],
     slideshow_interval: 4000,
     idle_timeout: 30000,
@@ -75,6 +76,9 @@ export function AdminSettingsPage() {
           settingsObj.show_product_info_on_cards === "true",
         product_info_position: (settingsObj.product_info_position ||
           "below") as "overlay" | "below",
+        logo_width: settingsObj.logo_width
+          ? parseInt(settingsObj.logo_width)
+          : 144,
         slideshow_images: settingsObj.slideshow_images
           ? JSON.parse(settingsObj.slideshow_images)
           : [],
@@ -208,6 +212,11 @@ export function AdminSettingsPage() {
       await apiClient.adminUpsertSetting(
         "slideshow_transition",
         settings.slideshow_transition,
+        token,
+      );
+      await apiClient.adminUpsertSetting(
+        "logo_width",
+        settings.logo_width.toString(),
         token,
       );
 
@@ -382,6 +391,42 @@ export function AdminSettingsPage() {
                     />
                   </div>
 
+                  {/* Logo Width */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">
+                      Logo Genişliği (px):
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={40}
+                        max={400}
+                        step={4}
+                        value={settings.logo_width}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            logo_width: parseInt(e.target.value),
+                          })
+                        }
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                      />
+                      <input
+                        type="number"
+                        min={40}
+                        max={400}
+                        value={settings.logo_width}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            logo_width: parseInt(e.target.value) || 144,
+                          })
+                        }
+                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-black focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
                   {/* Preview */}
                   {settings.site_logo && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -392,7 +437,8 @@ export function AdminSettingsPage() {
                         <img
                           src={settings.site_logo}
                           alt="Header Logo"
-                          className="h-12 object-contain"
+                          style={{ width: settings.logo_width }}
+                          className="h-auto object-contain"
                         />
                       </div>
                     </div>

@@ -24,12 +24,13 @@ export function BrandsListPage() {
     <>
       <div className="min-h-screen bg-white px-4 py-4 md:px-6 lg:px-8 lg:py-6">
         {/* Header with Logo */}
-        <div className="max-w-[2000px] mx-auto mb-8 md:mb-12 lg:mb-16 flex justify-center">
+        <div className="max-w-[2000px] mx-auto mb-8 md:mb-12 lg:mb-16 flex justify-start md:justify-center">
           {settings?.site_logo ? (
             <img
               src={normalizeImageUrl(settings.site_logo)}
               alt={settings?.site_name || "Kiosk QR"}
-              className="w-36 h-auto md:w-auto md:h-8 lg:h-10"
+              style={{ width: settings.logo_width || 144 }}
+              className="h-auto object-contain"
             />
           ) : (
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-light tracking-[0.2em] md:tracking-[0.3em] text-black">
