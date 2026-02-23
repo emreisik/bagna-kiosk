@@ -29,7 +29,7 @@ export function BrandsListPage() {
             <img
               src={normalizeImageUrl(settings.site_logo)}
               alt={settings?.site_name || "Kiosk QR"}
-              className="w-40 h-auto md:w-auto md:h-10 lg:h-12"
+              className="w-36 h-auto md:w-auto md:h-8 lg:h-10"
             />
           ) : (
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-light tracking-[0.2em] md:tracking-[0.3em] text-black">

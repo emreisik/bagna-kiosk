@@ -107,7 +107,7 @@ export function ProductsPage() {
               <img
                 src={normalizeImageUrl(settings.site_logo)}
                 alt={settings?.site_name || "Kiosk QR"}
-                className="w-32 h-auto md:w-auto md:h-7 lg:h-8"
+                className="w-36 h-auto md:w-auto md:h-8 lg:h-10"
               />
             ) : (
               <h1 className="text-lg md:text-xl lg:text-2xl font-light tracking-[0.2em] md:tracking-[0.3em] text-black">
