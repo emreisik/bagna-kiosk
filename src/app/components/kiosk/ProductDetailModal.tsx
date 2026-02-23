@@ -1,6 +1,5 @@
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, ChevronRight } from "lucide-react";
 import { Product } from "../../../data/products";
-import { useI18n } from "../../../contexts/I18nContext";
 import { useCurrency } from "../../../hooks/useCurrency";
 import { motion, AnimatePresence } from "motion/react";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
@@ -16,7 +15,6 @@ export function ProductDetailModal({
   product,
   onClose,
 }: ProductDetailModalProps) {
-  const { t } = useI18n();
   const currency = useCurrency();
 
   if (!product) return null;
@@ -53,52 +51,79 @@ export function ProductDetailModal({
               <X className="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
             </button>
 
-            {/* Scrollable Image Gallery - Full Screen */}
-            <div className="w-full">
+            {/* Image Gallery - Mobile: dikey scroll, Desktop: yatay scroll */}
+            <div className="w-full h-full lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden lg:snap-x lg:snap-mandatory">
               {images.map((imageUrl, index) => (
                 <div
                   key={index}
-                  className="w-full h-screen flex items-center justify-center bg-black overflow-hidden"
+                  className="w-full h-screen flex items-center justify-center bg-black overflow-hidden lg:flex-shrink-0 lg:snap-center"
                 >
                   <img
                     src={normalizeImageUrl(imageUrl)}
                     alt={`${product.title} - ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover lg:w-auto lg:h-full lg:object-contain"
                   />
                 </div>
               ))}
             </div>
 
-            {/* Scroll indicator - animated arrow */}
+            {/* Scroll indicator - Mobile: aşağı ok, Desktop: sağ ok */}
             {images.length > 1 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5,
-                  delay: 1,
-                }}
-                className="fixed bottom-8 md:bottom-10 lg:bottom-12 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
-              >
+              <>
+                {/* Mobile/Tablet: aşağı scroll göstergesi */}
                 <motion.div
-                  animate={{ y: [0, 10, 0] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="flex flex-col items-center gap-2"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  className="fixed bottom-8 md:bottom-10 left-1/2 -translate-x-1/2 z-40 pointer-events-none lg:hidden"
                 >
-                  <ChevronDown
-                    className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white drop-shadow-2xl"
-                    strokeWidth={1.5}
-                  />
-                  <ChevronDown
-                    className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white drop-shadow-2xl -mt-6 md:-mt-7 lg:-mt-8"
-                    strokeWidth={1.5}
-                  />
+                  <motion.div
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    <ChevronDown
+                      className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-2xl"
+                      strokeWidth={1.5}
+                    />
+                    <ChevronDown
+                      className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-2xl -mt-6 md:-mt-7"
+                      strokeWidth={1.5}
+                    />
+                  </motion.div>
                 </motion.div>
-              </motion.div>
+
+                {/* Desktop: sağa scroll göstergesi */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  className="fixed top-1/2 -translate-y-1/2 right-6 z-40 pointer-events-none hidden lg:block"
+                >
+                  <motion.div
+                    animate={{ x: [0, 10, 0] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="flex items-center"
+                  >
+                    <ChevronRight
+                      className="w-12 h-12 text-white drop-shadow-2xl"
+                      strokeWidth={1.5}
+                    />
+                    <ChevronRight
+                      className="w-12 h-12 text-white drop-shadow-2xl -ml-8"
+                      strokeWidth={1.5}
+                    />
+                  </motion.div>
+                </motion.div>
+              </>
             )}
 
             {/* Product Info Bar - Fixed Bottom - Single Row on All Devices */}
