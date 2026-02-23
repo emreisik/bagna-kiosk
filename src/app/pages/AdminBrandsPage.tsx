@@ -287,10 +287,17 @@ export function AdminBrandsPage() {
                   </label>
                   <input
                     type="url"
-                    value={formData.logo}
-                    onChange={(e) =>
-                      setFormData({ ...formData, logo: e.target.value })
-                    }
+                    value={formData.logo ? getFullUrl(formData.logo) : ""}
+                    onChange={(e) => {
+                      // Tam URL girilirse relative path'e çevir
+                      const val = e.target.value;
+                      try {
+                        const url = new URL(val);
+                        setFormData({ ...formData, logo: url.pathname });
+                      } catch {
+                        setFormData({ ...formData, logo: val });
+                      }
+                    }}
                     placeholder="https://example.com/logo.png"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all text-sm"
                   />
