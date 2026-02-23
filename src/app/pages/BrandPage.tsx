@@ -6,7 +6,8 @@ import { FilterSheet } from "../components/kiosk/FilterSheet";
 import { ProductDetailModal } from "../components/kiosk/ProductDetailModal";
 import { KioskButton } from "../components/kiosk/KioskButton";
 import { useI18n } from "../../contexts/I18nContext";
-import { SlidersHorizontal, ChevronDown, X, Search } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, X } from "lucide-react";
+import { NumericSearch } from "../components/kiosk/NumericSearch";
 import { useBrand } from "../../hooks/useBrand";
 import { useSimilarProducts } from "../../hooks/useProducts";
 import { kioskConfig } from "../../config/kiosk.config";
@@ -253,27 +254,12 @@ export function BrandPage() {
 
         {/* Search and filter area */}
         <div className="max-w-[2000px] mx-auto mb-4 md:mb-6 lg:mb-8">
-          {/* Search Bar */}
-          <div className="relative mb-3 md:mb-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("searchByCode") || "Ürün kodu ile ara..."}
-              className="w-full pl-12 md:pl-14 pr-12 py-3 md:py-4 text-base md:text-lg bg-gray-50 border-2 border-gray-200 rounded-xl md:rounded-2xl focus:border-black focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-600" />
-              </button>
-            )}
-          </div>
+          {/* Search Bar with Custom Numeric Keypad */}
+          <NumericSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={t("searchByCode") || "Ürün kodu ile ara..."}
+          />
 
           <div className="flex items-center justify-between mb-3 md:mb-4 gap-2">
             <p className="text-sm md:text-base lg:text-lg text-gray-600 font-light">
