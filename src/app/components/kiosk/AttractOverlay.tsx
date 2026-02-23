@@ -2,7 +2,6 @@ import { useI18n } from "../../../contexts/I18nContext";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef } from "react";
 import { Language } from "../../../i18n/translations";
-import { QrCode } from "lucide-react";
 import { useNavigate } from "react-router";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
 
@@ -21,14 +20,14 @@ export function AttractOverlay({
   slideshowInterval = 4000,
   slideshowTransition = "fade",
 }: AttractOverlayProps = {}) {
-  const { t, availableLanguages } = useI18n();
+  const { availableLanguages } = useI18n();
   const navigate = useNavigate();
   const [rotatingLanguage, setRotatingLanguage] = useState<Language>(
     availableLanguages[0] || "tr",
   );
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const qrBufferRef = useRef<string>("");
-  const qrTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const qrTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Use slideshow images from settings, or show placeholder
   const allProductImages =
@@ -103,13 +102,6 @@ export function AttractOverlay({
     }
   };
 
-  // Debug: Log slideshow images
-  useEffect(() => {
-    console.log("Slideshow Images:", slideshowImages);
-    console.log("All Product Images:", allProductImages);
-    console.log("Slideshow Interval:", slideshowInterval);
-  }, [slideshowImages, allProductImages, slideshowInterval]);
-
   // Rotate languages every 10 seconds
   useEffect(() => {
     if (availableLanguages.length === 0) return;
@@ -129,11 +121,7 @@ export function AttractOverlay({
     if (allProductImages.length <= 1) return; // Don't rotate if only 1 image
 
     const interval = setInterval(() => {
-      setCurrentProductIndex((prev) => {
-        const next = (prev + 1) % allProductImages.length;
-        console.log("Image rotation:", prev, "→", next);
-        return next;
-      });
+      setCurrentProductIndex((prev) => (prev + 1) % allProductImages.length);
     }, slideshowInterval);
 
     return () => clearInterval(interval);
@@ -239,52 +227,77 @@ export function AttractOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden"
+      className="fixed inset-0 z-50 flex flex-col bg-black overflow-hidden"
       style={{ cursor: "pointer" }}
     >
-      {/* Animated gradient background */}
-      <motion.div
-        className="absolute inset-0 opacity-20"
-        animate={{
-          background: [
-            "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-            "radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-            "radial-gradient(circle at 50% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-            "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-          ],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
+      {/* Top: QR + Logo + Text */}
+      <div className="flex-shrink-0 flex flex-col items-center justify-center px-6 py-8 md:py-12 text-center bg-black">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="flex flex-col items-center gap-4 md:gap-6"
+        >
+          {/* Logo */}
+          {screensaverLogo ? (
+            <img
+              src={normalizeImageUrl(screensaverLogo)}
+              alt={siteName || "Kiosk QR"}
+              className="max-h-12 md:max-h-16 w-auto object-contain"
+            />
+          ) : (
+            <h1 className="text-2xl md:text-4xl font-extralight tracking-[0.3em] text-white">
+              {siteName || "Kiosk QR"}
+            </h1>
+          )}
 
-      {/* Layout: Mobile = full-screen slideshow + overlay text, Desktop = split screen */}
-      <div className="relative z-10 w-full h-full flex flex-col md:flex-row">
-        {/* Background Slideshow - Mobile only (behind text) */}
-        <div className="absolute inset-0 md:hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`slide-mobile-${currentProductIndex}`}
-              {...getTransitionVariants()}
-              className="absolute inset-0"
-              style={{
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-              }}
-            >
-              <img
-                src={normalizeImageUrl(allProductImages[currentProductIndex])}
-                alt={`Slide ${currentProductIndex + 1}`}
-                className="w-full h-full object-cover"
-              />
-              {/* Dark overlay for text readability on mobile */}
-              <div className="absolute inset-0 bg-black/60" />
-            </motion.div>
-          </AnimatePresence>
+          {/* QR Code */}
+          <div className="bg-white p-2.5 md:p-3 rounded-xl">
+            <img
+              src={qrCodeUrl}
+              alt="QR Code"
+              className="w-24 h-24 md:w-32 md:h-32"
+            />
+          </div>
 
-          {/* Product counter indicator - Mobile */}
+          {/* Rotating message */}
+          <motion.p
+            key={`msg-${rotatingLanguage}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="text-xs md:text-sm tracking-widest text-white/50 uppercase"
+          >
+            {getRotatingText("attractMessage")}
+          </motion.p>
+        </motion.div>
+      </div>
+
+      {/* Bottom: Image Slideshow */}
+      <div className="flex-1 relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`slide-${currentProductIndex}`}
+            {...getTransitionVariants()}
+            className="absolute inset-0"
+            style={{
+              transformStyle: "preserve-3d",
+              backfaceVisibility: "hidden",
+            }}
+          >
+            <img
+              src={normalizeImageUrl(allProductImages[currentProductIndex])}
+              alt={`Slide ${currentProductIndex + 1}`}
+              className="w-full h-full object-cover"
+            />
+            {/* Subtle top gradient for seamless blend */}
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent" />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Slide indicator */}
+        {allProductImages.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
             {allProductImages.slice(0, 10).map((_, index) => (
               <div
@@ -297,150 +310,7 @@ export function AttractOverlay({
               />
             ))}
           </div>
-        </div>
-
-        {/* Left Side (Mobile: full screen overlay, Desktop: left half) - Brand & Text Content */}
-        <div className="flex-1 relative z-10 flex flex-col items-center justify-center px-6 py-8 md:px-16 md:py-0 text-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="space-y-4 md:space-y-8"
-          >
-            {/* Logo or Brand Name */}
-            {screensaverLogo ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                className="mb-3 md:mb-6 w-full max-w-[200px] md:max-w-md mx-auto"
-              >
-                <img
-                  src={normalizeImageUrl(screensaverLogo)}
-                  alt={siteName || "Kiosk QR"}
-                  className="w-full max-h-24 md:max-h-40 object-contain mx-auto"
-                />
-              </motion.div>
-            ) : (
-              <h1 className="text-3xl md:text-5xl lg:text-7xl font-extralight tracking-[0.2em] md:tracking-[0.3em] text-white">
-                {siteName || "Kiosk QR"}
-              </h1>
-            )}
-
-            {/* Slogan - rotating with animation */}
-            <motion.p
-              key={`slogan-${rotatingLanguage}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5 }}
-              className="text-base md:text-xl lg:text-2xl font-light tracking-widest text-white/80"
-            >
-              {getRotatingText("slogan")}
-            </motion.p>
-
-            {/* Attract message - rotating with animation */}
-            <motion.div
-              key={`message-${rotatingLanguage}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, y: [0, 10, 0] }}
-              exit={{ opacity: 0 }}
-              transition={{
-                opacity: { duration: 0.5 },
-                y: {
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                },
-              }}
-              className="text-sm md:text-base lg:text-lg tracking-wider text-white/60 uppercase"
-            >
-              {getRotatingText("attractMessage")}
-            </motion.div>
-
-            {/* QR Code Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="mt-6 pt-6 md:mt-12 md:pt-12 border-t border-white/20"
-            >
-              {/* QR Code */}
-              <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl inline-block shadow-2xl mb-3 md:mb-4">
-                <img
-                  src={qrCodeUrl}
-                  alt="QR Code"
-                  className="w-28 h-28 md:w-48 md:h-48"
-                />
-              </div>
-
-              {/* QR Label */}
-              <motion.p
-                key={`qr-${rotatingLanguage}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="text-xs md:text-sm tracking-wide text-white/70 flex items-center justify-center gap-2"
-              >
-                <QrCode className="w-3 h-3 md:w-4 md:h-4" />
-                {getRotatingText("scanQR")}
-              </motion.p>
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Right Side - Product Showcase Slideshow (Desktop only) */}
-        <div className="hidden md:block flex-1 relative overflow-hidden">
-          {/* Vignette overlay */}
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black/50 z-10 pointer-events-none" />
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`slide-${currentProductIndex}`}
-              {...getTransitionVariants()}
-              className="absolute inset-0"
-              style={{
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-              }}
-            >
-              <img
-                src={normalizeImageUrl(allProductImages[currentProductIndex])}
-                alt={`Slide ${currentProductIndex + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error(
-                    "Image failed to load:",
-                    allProductImages[currentProductIndex],
-                  );
-                }}
-                onLoad={() => {
-                  console.log(
-                    "Image loaded:",
-                    allProductImages[currentProductIndex],
-                  );
-                }}
-              />
-
-              {/* Gradient overlay for better text visibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Product counter indicator */}
-          <div className="absolute bottom-8 right-8 z-20 flex gap-2">
-            {allProductImages.slice(0, 10).map((_, index) => (
-              <div
-                key={index}
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  index === currentProductIndex % 10
-                    ? "w-8 bg-white"
-                    : "w-1 bg-white/30"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );
