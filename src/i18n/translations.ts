@@ -9,6 +9,7 @@ export const translations = {
     allCategories: "All Categories",
     allTags: "All Tags",
     showingProducts: "Showing {count} products",
+    searchByCode: "Search by product code...",
     noProducts: "No products found",
     similarProducts: "Similar Products",
     scrollForMore: "Scroll for more",
@@ -26,7 +27,7 @@ export const translations = {
       altgiyim: "Lower Garments",
       elbise: "Dresses & Jumpsuits",
       takim: "Suits",
-      disgiyim: "Outerwear"
+      disgiyim: "Outerwear",
     },
     subcategories: {
       bluz: "BLOUSE",
@@ -35,7 +36,7 @@ export const translations = {
       etek: "SKIRT",
       pantolon: "PANTS",
       elbise: "DRESS",
-      takim: "SUIT"
+      takim: "SUIT",
     },
     tags: {
       modern: "Modern",
@@ -68,8 +69,8 @@ export const translations = {
       vest: "Vest",
       skirt: "Skirt",
       turtleneck: "Turtleneck",
-      jacket: "Jacket"
-    }
+      jacket: "Jacket",
+    },
   },
   tr: {
     brand: "Kiosk QR",
@@ -81,6 +82,7 @@ export const translations = {
     allCategories: "Tüm Kategoriler",
     allTags: "Tüm Etiketler",
     showingProducts: "{count} ürün gösteriliyor",
+    searchByCode: "Ürün kodu ile ara...",
     noProducts: "Ürün bulunamadı",
     similarProducts: "Benzer Ürünler",
     scrollForMore: "Daha fazla için kaydır",
@@ -98,7 +100,7 @@ export const translations = {
       altgiyim: "Alt Giyim",
       elbise: "Elbise & Tulum",
       takim: "Takım",
-      disgiyim: "Dış Giyim"
+      disgiyim: "Dış Giyim",
     },
     subcategories: {
       bluz: "BLUZ",
@@ -107,7 +109,7 @@ export const translations = {
       etek: "ETEK",
       pantolon: "PANTOLON",
       elbise: "ELBİSE",
-      takim: "TAKIM"
+      takim: "TAKIM",
     },
     tags: {
       modern: "Modern",
@@ -140,8 +142,8 @@ export const translations = {
       vest: "Yelek",
       skirt: "Etek",
       turtleneck: "Balıkçı Yaka",
-      jacket: "Ceket"
-    }
+      jacket: "Ceket",
+    },
   },
   ru: {
     brand: "Kiosk QR",
@@ -153,6 +155,7 @@ export const translations = {
     allCategories: "Все Категории",
     allTags: "Все Теги",
     showingProducts: "Показано {count} товаров",
+    searchByCode: "Поиск по коду товара...",
     noProducts: "Товары не найдены",
     similarProducts: "Похожие Товары",
     scrollForMore: "Прокрутите для продолжения",
@@ -170,7 +173,7 @@ export const translations = {
       altgiyim: "Нижняя Одежда",
       elbise: "Платья и Комбинезоны",
       takim: "Костюмы",
-      disgiyim: "Верхняя Одежда"
+      disgiyim: "Верхняя Одежда",
     },
     subcategories: {
       bluz: "БЛУЗКА",
@@ -179,7 +182,7 @@ export const translations = {
       etek: "ЮБКА",
       pantolon: "БРЮКИ",
       elbise: "ПЛАТЬЕ",
-      takim: "КОСТЮМ"
+      takim: "КОСТЮМ",
     },
     tags: {
       modern: "Современный",
@@ -212,9 +215,9 @@ export const translations = {
       vest: "Жилет",
       skirt: "Юбка",
       turtleneck: "Водолазка",
-      jacket: "Жакет"
-    }
-  }
+      jacket: "Жакет",
+    },
+  },
 };
 
 export type Language = keyof typeof translations;
