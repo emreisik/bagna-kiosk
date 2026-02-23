@@ -1,3 +1,4 @@
+import { useRef, useCallback } from "react";
 import { X, ChevronDown, ChevronRight } from "lucide-react";
 import { Product } from "../../../data/products";
 import { useCurrency } from "../../../hooks/useCurrency";
@@ -16,6 +17,14 @@ export function ProductDetailModal({
   onClose,
 }: ProductDetailModalProps) {
   const currency = useCurrency();
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  // Mouse wheel → yatay scroll (desktop)
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    if (!galleryRef.current) return;
+    e.preventDefault();
+    galleryRef.current.scrollLeft += e.deltaY;
+  }, []);
 
   if (!product) return null;
 
@@ -52,7 +61,11 @@ export function ProductDetailModal({
             </button>
 
             {/* Image Gallery - Mobile: dikey scroll, Desktop: yatay scroll 3'lü yan yana */}
-            <div className="w-full h-full lg:h-screen lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden">
+            <div
+              ref={galleryRef}
+              onWheel={handleWheel}
+              className="w-full h-full lg:h-screen lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden"
+            >
               {images.map((imageUrl, index) => (
                 <div
                   key={index}
