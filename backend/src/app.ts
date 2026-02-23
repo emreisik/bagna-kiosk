@@ -85,9 +85,11 @@ export async function createApp(): Promise<Express> {
   app.use(express.urlencoded({ extended: true }));
 
   // Static files - uploaded images (30 gün cache, görseller nadiren değişir)
+  // UPLOAD_DIR env var varsa onu kullan (Railway Volume), yoksa default relative path
+  const { uploadDir } = await import("./middleware/upload.middleware.js");
   app.use(
     "/uploads",
-    express.static(path.join(__dirname, "../uploads"), {
+    express.static(uploadDir, {
       maxAge: "30d",
     }),
   );

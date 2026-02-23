@@ -14,3 +14,11 @@ healthcheckPath = "/health"
 healthcheckTimeout = 200
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
+
+# ============================================
+# Volume: Görsellerin kalıcı depolanması
+# ============================================
+# Railway Dashboard'dan Volume oluşturun:
+#   1. Service → Settings → Volumes → Mount Volume
+#   2. Mount Path: /data/uploads
+#   3. Environment variable ekleyin: UPLOAD_DIR=/data/uploads

@@ -849,7 +849,7 @@ export function AdminSettingsPage() {
                       </p>
                       <div className="bg-black/50 p-6 rounded-lg flex items-center justify-center min-h-[120px]">
                         <img
-                          src={settings.screensaver_logo}
+                          src={normalizeImageUrl(settings.screensaver_logo)}
                           alt="Screensaver Logo"
                           className="max-h-20 object-contain"
                         />

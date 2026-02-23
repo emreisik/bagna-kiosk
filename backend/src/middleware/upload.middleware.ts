@@ -2,12 +2,14 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { config } from "../config/env.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Upload klasörünü oluştur
-const uploadDir = path.join(__dirname, "../../uploads");
+// Upload klasörü: UPLOAD_DIR env var veya default relative path
+export const uploadDir =
+  config.UPLOAD_DIR || path.join(__dirname, "../../uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

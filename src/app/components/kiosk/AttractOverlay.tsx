@@ -270,7 +270,7 @@ export function AttractOverlay({
                 className="mb-6 w-full max-w-md mx-auto"
               >
                 <img
-                  src={screensaverLogo}
+                  src={normalizeImageUrl(screensaverLogo)}
                   alt={siteName || "Kiosk QR"}
                   className="w-full max-h-40 object-contain mx-auto"
                 />

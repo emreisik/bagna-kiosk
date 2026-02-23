@@ -13,6 +13,8 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("7d"),
   // FRONTEND_URL artık gerekli değil - production'da same-origin
   FRONTEND_URL: z.string().url().optional(),
+  // Railway Volume mount path - production'da /data/uploads, dev'de relative path
+  UPLOAD_DIR: z.string().optional(),
 });
 
 export const config = envSchema.parse(process.env);
