@@ -51,17 +51,17 @@ export function ProductDetailModal({
               <X className="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
             </button>
 
-            {/* Image Gallery - Mobile: dikey scroll, Desktop: yatay scroll */}
-            <div className="w-full h-full lg:h-screen lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden lg:snap-x lg:snap-mandatory">
+            {/* Image Gallery - Mobile: dikey scroll, Desktop: yatay scroll 3'lü yan yana */}
+            <div className="w-full h-full lg:h-screen lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden">
               {images.map((imageUrl, index) => (
                 <div
                   key={index}
-                  className="w-full h-screen flex items-center justify-center bg-black overflow-hidden lg:w-screen lg:flex-shrink-0 lg:snap-center"
+                  className="w-full h-screen flex items-center justify-center bg-black overflow-hidden lg:w-1/3 lg:flex-shrink-0"
                 >
                   <img
                     src={normalizeImageUrl(imageUrl)}
                     alt={`${product.title} - ${index + 1}`}
-                    className="w-full h-full object-cover lg:w-auto lg:h-full lg:object-contain"
+                    className="w-full h-full object-cover lg:w-full lg:h-full lg:object-contain"
                   />
                 </div>
               ))}
