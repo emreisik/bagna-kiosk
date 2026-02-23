@@ -41,7 +41,7 @@ export function ProductDetailModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black z-50 overflow-y-auto"
+            className="fixed inset-0 bg-black z-50 overflow-y-auto lg:overflow-hidden"
           >
             {/* Close button - Fixed position */}
             <button
@@ -52,11 +52,11 @@ export function ProductDetailModal({
             </button>
 
             {/* Image Gallery - Mobile: dikey scroll, Desktop: yatay scroll */}
-            <div className="w-full h-full lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden lg:snap-x lg:snap-mandatory">
+            <div className="w-full h-full lg:h-screen lg:flex lg:flex-row lg:overflow-x-auto lg:overflow-y-hidden lg:snap-x lg:snap-mandatory">
               {images.map((imageUrl, index) => (
                 <div
                   key={index}
-                  className="w-full h-screen flex items-center justify-center bg-black overflow-hidden lg:flex-shrink-0 lg:snap-center"
+                  className="w-full h-screen flex items-center justify-center bg-black overflow-hidden lg:w-screen lg:flex-shrink-0 lg:snap-center"
                 >
                   <img
                     src={normalizeImageUrl(imageUrl)}
