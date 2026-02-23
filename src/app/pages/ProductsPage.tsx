@@ -181,6 +181,8 @@ export function ProductsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("searchByCode") || "Ürün kodu ile ara..."}
