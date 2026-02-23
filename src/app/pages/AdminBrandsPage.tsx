@@ -57,11 +57,19 @@ export function AdminBrandsPage() {
     }
   };
 
+  const getFullUrl = (path: string) => {
+    const normalized = normalizeImageUrl(path);
+    if (!normalized) return "";
+    return normalized.startsWith("http")
+      ? normalized
+      : `${window.location.origin}${normalized}`;
+  };
+
   const handleCopyUrl = async () => {
     if (!formData.logo) return;
 
     try {
-      await navigator.clipboard.writeText(formData.logo);
+      await navigator.clipboard.writeText(getFullUrl(formData.logo));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -317,7 +325,7 @@ export function AdminBrandsPage() {
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          value={formData.logo}
+                          value={getFullUrl(formData.logo)}
                           readOnly
                           className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 font-mono"
                         />
