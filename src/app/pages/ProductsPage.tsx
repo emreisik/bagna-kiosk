@@ -315,19 +315,17 @@ export function ProductsPage() {
         onSimilarProductClick={handleSimilarProductClick}
       />
 
-      {/* Attract Mode Overlay - Desktop only (Kiosk mode) */}
+      {/* Attract Mode Overlay */}
       <AnimatePresence>
-        {isIdle &&
-          typeof window !== "undefined" &&
-          window.innerWidth >= 768 && (
-            <AttractOverlay
-              screensaverLogo={settings?.screensaver_logo}
-              siteName={settings?.site_name}
-              slideshowImages={settings?.slideshow_images}
-              slideshowInterval={settings?.slideshow_interval}
-              slideshowTransition={settings?.slideshow_transition}
-            />
-          )}
+        {isIdle && (
+          <AttractOverlay
+            screensaverLogo={settings?.screensaver_logo}
+            siteName={settings?.site_name}
+            slideshowImages={settings?.slideshow_images}
+            slideshowInterval={settings?.slideshow_interval}
+            slideshowTransition={settings?.slideshow_transition}
+          />
+        )}
       </AnimatePresence>
     </>
   );
