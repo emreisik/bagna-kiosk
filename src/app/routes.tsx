@@ -22,9 +22,11 @@ import { CartProvider } from "../contexts/CartContext";
 function Root() {
   return (
     <I18nProvider>
-      <KioskLayout>
-        <BrandsListPage />
-      </KioskLayout>
+      <CartProvider>
+        <KioskLayout>
+          <BrandsListPage />
+        </KioskLayout>
+      </CartProvider>
     </I18nProvider>
   );
 }
