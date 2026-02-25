@@ -26,6 +26,7 @@ export function AdminSettingsPage() {
     screensaver_logo: "",
     site_name: "Kiosk QR",
     currency: "$",
+    notification_email: "",
     grid_columns_mobile: 2,
     grid_columns_tablet: 2,
     grid_columns_desktop: 3,
@@ -60,6 +61,7 @@ export function AdminSettingsPage() {
         screensaver_logo: settingsObj.screensaver_logo || "",
         site_name: settingsObj.site_name || "Kiosk QR",
         currency: settingsObj.currency || "$",
+        notification_email: settingsObj.notification_email || "",
         grid_columns_mobile: settingsObj.grid_columns_mobile
           ? parseInt(settingsObj.grid_columns_mobile)
           : 2,
@@ -219,6 +221,11 @@ export function AdminSettingsPage() {
         settings.logo_width.toString(),
         token,
       );
+      await apiClient.adminUpsertSetting(
+        "notification_email",
+        settings.notification_email,
+        token,
+      );
 
       // Invalidate settings cache to refresh all settings across the app
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
@@ -339,6 +346,29 @@ export function AdminSettingsPage() {
                 </select>
                 <p className="mt-2 text-xs text-gray-500">
                   Tüm ürün fiyatlarının yanında bu para birimi gösterilecektir
+                </p>
+              </div>
+
+              {/* Bildirim E-postalari Card */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">
+                  Bildirim E-postalari
+                </h3>
+                <input
+                  type="text"
+                  value={settings.notification_email}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      notification_email: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  placeholder="ornek@mail.com, ornek2@mail.com"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Yeni siparis geldiginde bu adreslere bildirim gonderilir.
+                  Birden fazla icin virgul ile ayirin.
                 </p>
               </div>
 

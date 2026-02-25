@@ -172,10 +172,21 @@ export async function sendOrderNotification(
   });
 
   const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
-  const notificationEmail = settingsMap["notification_email"];
+  const notificationEmailRaw = settingsMap["notification_email"];
 
-  if (!notificationEmail) {
+  if (!notificationEmailRaw || !notificationEmailRaw.trim()) {
     console.log("notification_email ayari tanimli degil, email gonderilmedi");
+    return;
+  }
+
+  // Virgul ile ayrilmis birden fazla email destegi
+  const recipients = notificationEmailRaw
+    .split(",")
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0);
+
+  if (recipients.length === 0) {
+    console.log("Gecerli email adresi bulunamadi");
     return;
   }
 
@@ -187,7 +198,7 @@ export async function sendOrderNotification(
 
   const { error } = await resend.emails.send({
     from: `${siteName} <${config.RESEND_FROM_EMAIL}>`,
-    to: notificationEmail,
+    to: recipients,
     subject: `Yeni Siparis — #${order.orderNumber}`,
     html,
   });
@@ -196,7 +207,7 @@ export async function sendOrderNotification(
     console.error("Resend email hatasi:", error);
   } else {
     console.log(
-      `Siparis bildirimi gonderildi: ${order.orderNumber} → ${notificationEmail}`,
+      `Siparis bildirimi gonderildi: ${order.orderNumber} → ${recipients.join(", ")}`,
     );
   }
 }
