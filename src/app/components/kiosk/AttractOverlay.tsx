@@ -278,7 +278,7 @@ export function AttractOverlay({
           <div className="flex flex-col items-center gap-3">
             <div className="w-16 h-px bg-gray-200" />
             {siteName && (
-              <p className="text-[10px] md:text-xs tracking-[0.35em] text-red-600 uppercase font-extralight">
+              <p className="text-xs md:text-sm tracking-[0.35em] text-black uppercase font-light">
                 {siteName}
               </p>
             )}
