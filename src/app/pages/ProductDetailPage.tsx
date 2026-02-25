@@ -328,11 +328,6 @@ export function ProductDetailPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
                     Beden Seciniz
-                    {selectedSizeRange && (
-                      <span className="ml-2 text-black normal-case tracking-normal">
-                        — {selectedSizeRange}
-                      </span>
-                    )}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableSizeRanges.map((sr) => (
@@ -359,11 +354,6 @@ export function ProductDetailPage() {
                   <div>
                     <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
                       Renk Seciniz
-                      {selectedColor && (
-                        <span className="ml-2 text-black normal-case tracking-normal">
-                          — {selectedColor}
-                        </span>
-                      )}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {availableColors.map((color) => (

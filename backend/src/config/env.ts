@@ -15,6 +15,9 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url().optional(),
   // Railway Volume mount path - production'da /data/uploads, dev'de relative path
   UPLOAD_DIR: z.string().optional(),
+  // Resend email
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().email().default("noreply@bagnaxclusive.com"),
 });
 
 export const config = envSchema.parse(process.env);

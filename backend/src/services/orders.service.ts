@@ -1,4 +1,5 @@
 import { prisma } from "../config/database.js";
+import { sendOrderNotification } from "./email.service.js";
 
 interface CreateOrderInput {
   firstName: string;
@@ -29,7 +30,7 @@ function generateOrderNumber(): string {
 export async function createOrder(input: CreateOrderInput) {
   const orderNumber = generateOrderNumber();
 
-  return prisma.order.create({
+  const order = await prisma.order.create({
     data: {
       orderNumber,
       firstName: input.firstName,
@@ -55,6 +56,13 @@ export async function createOrder(input: CreateOrderInput) {
       items: true,
     },
   });
+
+  // Fire-and-forget: email hatasi siparis akisini etkilememeli
+  sendOrderNotification(order).catch((err) =>
+    console.error("Email gonderilemedi:", err),
+  );
+
+  return order;
 }
 
 export async function getOrders(page = 1, limit = 50) {
