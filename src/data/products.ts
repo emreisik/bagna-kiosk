@@ -1,3 +1,10 @@
+export interface ProductVariant {
+  id: string;
+  sizeRange: string;
+  color: string;
+  price: string;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -19,6 +26,7 @@ export interface Product {
   sizeRange: string; // e.g., "36-42", "S-XL", etc.
   price: string; // e.g., "92$", "150€", etc.
   status?: string;
+  variants?: ProductVariant[];
 }
 
 export const products: Product[] = [

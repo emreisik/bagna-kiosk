@@ -38,6 +38,12 @@ interface ApiProduct {
     imageUrl: string;
     displayOrder: number;
   }>;
+  variants?: Array<{
+    id: string;
+    sizeRange: string;
+    color: string;
+    price: string;
+  }>;
 }
 
 interface ApiProductsResponse {
@@ -59,6 +65,47 @@ interface ApiCategory {
     name: string;
     displayName: string;
   }>;
+}
+
+export interface CreateOrderInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  brandSlug?: string;
+  items: Array<{
+    productId: string;
+    productCode: string;
+    title: string;
+    price: string;
+    sizeRange: string;
+    imageUrl: string;
+    quantity: number;
+    variantId?: string;
+    color?: string;
+  }>;
+}
+
+export interface OrderResponse {
+  id: string;
+  orderNumber: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  brandSlug?: string;
+  status: string;
+  items: Array<{
+    id: string;
+    productId: string;
+    productCode: string;
+    title: string;
+    price: string;
+    sizeRange: string;
+    imageUrl: string;
+    quantity: number;
+  }>;
+  createdAt: string;
 }
 
 export interface ProductFilters {
@@ -93,6 +140,12 @@ function transformProduct(apiProduct: ApiProduct): Product {
     sizeRange: apiProduct.sizeRange,
     price: apiProduct.price,
     status: apiProduct.status,
+    variants: apiProduct.variants?.map((v) => ({
+      id: v.id,
+      sizeRange: v.sizeRange,
+      color: v.color,
+      price: v.price,
+    })),
   };
 }
 
@@ -207,6 +260,14 @@ class ApiClient {
       ...brand,
       products: brand.products.map(transformProduct),
     };
+  }
+
+  // Orders - Public
+  async createOrder(input: CreateOrderInput): Promise<OrderResponse> {
+    return this.request<OrderResponse>("/orders", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   }
 
   // Admin methods

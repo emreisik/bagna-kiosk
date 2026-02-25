@@ -58,6 +58,7 @@ export async function getProducts(params: GetProductsParams) {
         subcategory: true,
         brand: true,
         images: { orderBy: { displayOrder: "asc" } },
+        variants: { orderBy: [{ sizeRange: "asc" }, { color: "asc" }] },
       },
       skip,
       take: limit,
@@ -85,6 +86,7 @@ export async function getProductById(id: string) {
       subcategory: true,
       brand: true,
       images: { orderBy: { displayOrder: "asc" } },
+      variants: { orderBy: [{ sizeRange: "asc" }, { color: "asc" }] },
     },
   });
 }

@@ -35,6 +35,9 @@ export async function getBrandBySlug(slug: string) {
           images: {
             orderBy: { displayOrder: "asc" },
           },
+          variants: {
+            orderBy: [{ sizeRange: "asc" }, { color: "asc" }],
+          },
         },
       },
       _count: {

@@ -20,6 +20,7 @@ export interface CreateProductData {
   price: string;
   status?: string; // Optional: super_admin can set manually
   images?: Array<{ imageUrl: string; displayOrder: number }>;
+  variants?: Array<{ sizeRange: string; color: string; price: string }>;
 }
 
 export interface UpdateProductData extends Partial<CreateProductData> {}
@@ -121,6 +122,11 @@ export async function createProduct(
             create: data.images,
           }
         : undefined,
+      variants: data.variants
+        ? {
+            create: data.variants,
+          }
+        : undefined,
     },
     include: {
       category: true,
@@ -128,6 +134,9 @@ export async function createProduct(
       brand: true,
       images: {
         orderBy: { displayOrder: "asc" },
+      },
+      variants: {
+        orderBy: [{ sizeRange: "asc" }, { color: "asc" }],
       },
     },
   });
@@ -141,6 +150,13 @@ export async function updateProduct(
   // If images are provided, delete existing and create new ones
   if (data.images) {
     await prisma.productImage.deleteMany({
+      where: { productId: id },
+    });
+  }
+
+  // If variants are provided, delete existing and create new ones
+  if (data.variants) {
+    await prisma.productVariant.deleteMany({
       where: { productId: id },
     });
   }
@@ -181,6 +197,11 @@ export async function updateProduct(
             create: data.images,
           }
         : undefined,
+      variants: data.variants
+        ? {
+            create: data.variants,
+          }
+        : undefined,
     },
     include: {
       category: true,
@@ -188,6 +209,9 @@ export async function updateProduct(
       brand: true,
       images: {
         orderBy: { displayOrder: "asc" },
+      },
+      variants: {
+        orderBy: [{ sizeRange: "asc" }, { color: "asc" }],
       },
     },
   });

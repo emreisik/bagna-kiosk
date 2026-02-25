@@ -1,23 +1,29 @@
 import { useRef, useCallback } from "react";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { X, ChevronDown, ChevronRight, ShoppingBag } from "lucide-react";
 import { Product } from "../../../data/products";
 import { useCurrency } from "../../../hooks/useCurrency";
 import { motion, AnimatePresence } from "motion/react";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
+import { useCart } from "../../../contexts/CartContext";
+import { useNavigate } from "react-router";
 
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   similarProducts: Product[];
   onSimilarProductClick: (product: Product) => void;
+  brandSlug?: string;
 }
 
 export function ProductDetailModal({
   product,
   onClose,
+  brandSlug,
 }: ProductDetailModalProps) {
   const currency = useCurrency();
   const galleryRef = useRef<HTMLDivElement>(null);
+  const { addItem } = useCart();
+  const navigate = useNavigate();
 
   // Mouse wheel → yatay scroll (desktop)
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -173,6 +179,22 @@ export function ProductDetailModal({
                       {currency}
                     </p>
                   </div>
+
+                  {/* Add to Cart Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addItem(product);
+                      onClose();
+                      navigate(`/${brandSlug || ""}/checkout`);
+                    }}
+                    className="px-3 py-2 md:px-6 md:py-4 lg:px-8 lg:py-6 bg-black border-l border-white/20 flex items-center justify-center gap-1.5 md:gap-2 hover:bg-gray-900 transition-colors"
+                  >
+                    <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-white" />
+                    <span className="hidden md:inline text-white uppercase tracking-widest text-xs md:text-sm lg:text-base font-medium">
+                      Sepete Ekle
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>

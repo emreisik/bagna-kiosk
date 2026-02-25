@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "../components/admin/AdminLayout";
 import { useCategories } from "../../hooks/useCategories";
 import { apiClient } from "../../services/api";
-import { X, ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { X, ArrowLeft, Upload, Loader2, Plus, Trash2 } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 
 export function AdminProductFormPage() {
@@ -32,6 +32,9 @@ export function AdminProductFormPage() {
     status: "pending", // "pending", "approved", "rejected"
   });
   const [productImages, setProductImages] = useState<string[]>([]); // İlk görsel = ana görsel, diğerleri = galeri
+  const [variants, setVariants] = useState<
+    Array<{ sizeRange: string; color: string; price: string }>
+  >([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -113,7 +116,17 @@ export function AdminProductFormPage() {
 
         // product.images zaten ana görsel + diğer görselleri içeriyor
         setProductImages(product.images || []);
-        console.log("✅ Set productImages:", product.images || []);
+
+        // Varyantlari yukle
+        if (product.variants && product.variants.length > 0) {
+          setVariants(
+            product.variants.map((v: any) => ({
+              sizeRange: v.sizeRange,
+              color: v.color,
+              price: v.price,
+            })),
+          );
+        }
       }
     } catch (error) {
       console.error("Failed to fetch product:", error);
@@ -219,6 +232,7 @@ export function AdminProductFormPage() {
           imageUrl,
           displayOrder: index,
         })),
+        variants: variants.length > 0 ? variants : undefined,
       };
 
       console.log("📦 Product data being sent:", productData);
@@ -535,6 +549,122 @@ export function AdminProductFormPage() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Varyantlar */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-sm font-semibold">
+                    Varyantlar (Opsiyonel)
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    Birden fazla beden/renk/fiyat kombinasyonu ekleyin
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVariants([
+                      ...variants,
+                      {
+                        sizeRange: formData.sizeRange || "36-42",
+                        color: "",
+                        price: formData.price || "",
+                      },
+                    ])
+                  }
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-black text-white rounded hover:bg-gray-800 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Varyant Ekle
+                </button>
+              </div>
+
+              {variants.length > 0 && (
+                <div className="space-y-2">
+                  {/* Tablo basligi */}
+                  <div className="grid grid-cols-12 gap-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <span className="col-span-4">Beden Araligi</span>
+                    <span className="col-span-4">Renk</span>
+                    <span className="col-span-3">Fiyat</span>
+                    <span className="col-span-1"></span>
+                  </div>
+
+                  {variants.map((variant, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-lg p-2"
+                    >
+                      <div className="col-span-4">
+                        <select
+                          value={variant.sizeRange}
+                          onChange={(e) => {
+                            const updated = [...variants];
+                            updated[idx] = {
+                              ...updated[idx],
+                              sizeRange: e.target.value,
+                            };
+                            setVariants(updated);
+                          }}
+                          className="w-full px-2 py-1.5 border rounded text-sm"
+                        >
+                          <option value="36-42">36-42</option>
+                          <option value="42-48">42-48</option>
+                          <option value="32-40">32-40</option>
+                          <option value="42-46">42-46</option>
+                          <option value="S-XL">S-XL</option>
+                          <option value="M-XXL">M-XXL</option>
+                          <option value="XS-L">XS-L</option>
+                        </select>
+                      </div>
+                      <div className="col-span-4">
+                        <input
+                          type="text"
+                          value={variant.color}
+                          onChange={(e) => {
+                            const updated = [...variants];
+                            updated[idx] = {
+                              ...updated[idx],
+                              color: e.target.value,
+                            };
+                            setVariants(updated);
+                          }}
+                          placeholder="Orn: Siyah"
+                          className="w-full px-2 py-1.5 border rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <input
+                          type="text"
+                          value={variant.price}
+                          onChange={(e) => {
+                            const updated = [...variants];
+                            updated[idx] = {
+                              ...updated[idx],
+                              price: e.target.value,
+                            };
+                            setVariants(updated);
+                          }}
+                          placeholder="Orn: 145$"
+                          className="w-full px-2 py-1.5 border rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setVariants(variants.filter((_, i) => i !== idx))
+                          }
+                          className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Actions */}

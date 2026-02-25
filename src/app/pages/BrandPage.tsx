@@ -1,20 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { Product } from "../../data/products";
 import { GalleryGrid } from "../components/kiosk/GalleryGrid";
 import { FilterSheet } from "../components/kiosk/FilterSheet";
-import { ProductDetailModal } from "../components/kiosk/ProductDetailModal";
 import { KioskButton } from "../components/kiosk/KioskButton";
 import { useI18n } from "../../contexts/I18nContext";
 import { SlidersHorizontal, ChevronDown, X } from "lucide-react";
 import { NumericSearch } from "../components/kiosk/NumericSearch";
 import { useBrand } from "../../hooks/useBrand";
-import { useSimilarProducts } from "../../hooks/useProducts";
 import { kioskConfig } from "../../config/kiosk.config";
 import { useIdleTimer } from "../../hooks/useIdleTimer";
 import { AttractOverlay } from "../components/kiosk/AttractOverlay";
 import { AnimatePresence, motion } from "motion/react";
-import { Language } from "../../i18n/translations";
 import { useCategories } from "../../hooks/useCategories";
 import { useSettings } from "../../hooks/useSettings";
 import { normalizeImageUrl } from "../../utils/imageUrl";
@@ -28,8 +25,8 @@ export function BrandPage() {
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch settings first (needed for idle timeout and logo)
   const { data: settings } = useSettings();
@@ -59,12 +56,6 @@ export function BrandPage() {
 
   // Fetch categories for FilterSheet
   const { data: categoriesData } = useCategories();
-
-  // Fetch similar products when a product is selected
-  const { data: similarProducts } = useSimilarProducts(
-    selectedProduct?.id,
-    kioskConfig.modal.similarProductsCount,
-  );
 
   // Create slug -> displayName mapping
   const categoryMap = useMemo(() => {
@@ -141,11 +132,7 @@ export function BrandPage() {
   });
 
   const handleProductClick = (product: Product) => {
-    setSelectedProduct(product);
-  };
-
-  const handleSimilarProductClick = (product: Product) => {
-    setSelectedProduct(product);
+    navigate(`/${brandSlug}/product/${product.id}`);
   };
 
   const activeFilterCount =
@@ -399,14 +386,6 @@ export function BrandPage() {
         onCategoryChange={setSelectedCategory}
         onSubcategoryChange={setSelectedSubcategory}
         onSearchChange={setSearchQuery}
-      />
-
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        similarProducts={similarProducts || []}
-        onSimilarProductClick={handleSimilarProductClick}
       />
 
       {/* Attract Mode Overlay */}

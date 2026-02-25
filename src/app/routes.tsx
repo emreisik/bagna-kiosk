@@ -12,8 +12,11 @@ import { AdminCategoriesPage } from "./pages/AdminCategoriesPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { AdminSettingsPage } from "./pages/AdminSettingsPage";
 import { AdminTranslationsPage } from "./pages/AdminTranslationsPage";
+import { CheckoutPage } from "./pages/CheckoutPage";
+import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { I18nProvider } from "../contexts/I18nContext";
+import { CartProvider } from "../contexts/CartContext";
 
 function Root() {
   return (
@@ -102,9 +105,35 @@ export const router = createBrowserRouter([
     path: "/:brandSlug",
     element: (
       <I18nProvider>
-        <KioskLayout>
-          <BrandPage />
-        </KioskLayout>
+        <CartProvider>
+          <KioskLayout>
+            <BrandPage />
+          </KioskLayout>
+        </CartProvider>
+      </I18nProvider>
+    ),
+  },
+  {
+    path: "/:brandSlug/product/:productId",
+    element: (
+      <I18nProvider>
+        <CartProvider>
+          <KioskLayout>
+            <ProductDetailPage />
+          </KioskLayout>
+        </CartProvider>
+      </I18nProvider>
+    ),
+  },
+  {
+    path: "/:brandSlug/checkout",
+    element: (
+      <I18nProvider>
+        <CartProvider>
+          <KioskLayout>
+            <CheckoutPage />
+          </KioskLayout>
+        </CartProvider>
       </I18nProvider>
     ),
   },

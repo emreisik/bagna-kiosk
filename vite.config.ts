@@ -100,7 +100,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://localhost:3001",
+        target: "https://bagnaxclusive.com",
         changeOrigin: true,
       },
     },
