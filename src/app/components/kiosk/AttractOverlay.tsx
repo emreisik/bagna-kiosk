@@ -278,12 +278,24 @@ export function AttractOverlay({
           <div className="w-16 h-px bg-gray-200" />
 
           {/* QR Code - büyük, net */}
-          <div className="p-3 rounded-2xl border border-gray-100 bg-white">
-            <img
-              src={qrCodeUrl}
-              alt="QR Code"
-              className="w-36 h-36 md:w-44 md:h-44"
-            />
+          <div className="flex flex-col items-center gap-3 md:gap-4">
+            <div className="p-3 rounded-2xl border border-gray-100 bg-white">
+              <img
+                src={qrCodeUrl}
+                alt="QR Code"
+                className="w-36 h-36 md:w-44 md:h-44"
+              />
+            </div>
+            <motion.p
+              key={`scan-${rotatingLanguage}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-xs md:text-sm tracking-[0.15em] text-gray-500 uppercase font-light"
+            >
+              {getRotatingText("scanQR")}
+            </motion.p>
           </div>
 
           {/* Dönen mesaj */}
