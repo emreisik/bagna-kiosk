@@ -11,6 +11,8 @@ interface AttractOverlayProps {
   slideshowImages?: string[];
   slideshowInterval?: number;
   slideshowTransition?: string;
+  brandLogo?: string;
+  brandName?: string;
 }
 
 export function AttractOverlay({
@@ -19,7 +21,10 @@ export function AttractOverlay({
   slideshowImages = [],
   slideshowInterval = 4000,
   slideshowTransition = "fade",
+  brandLogo,
+  brandName,
 }: AttractOverlayProps = {}) {
+  const isBrandMode = !!brandLogo;
   const { availableLanguages } = useI18n();
   const navigate = useNavigate();
   const [rotatingLanguage, setRotatingLanguage] = useState<Language>(
@@ -220,7 +225,58 @@ export function AttractOverlay({
   // Generate QR code URL (using a QR API service)
   // Use full URL (including path) so QR code points to current page
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}&color=000000&bgcolor=FFFFFF`;
+
+  // Marka modu: beyaz minimal tasarım
+  if (isBrandMode) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white overflow-hidden"
+        style={{ cursor: "pointer" }}
+      >
+        {/* Marka logosu - merkez, büyük */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+          className="flex flex-col items-center gap-8 md:gap-12"
+        >
+          <img
+            src={normalizeImageUrl(brandLogo)}
+            alt={brandName || "Brand"}
+            className="max-h-28 md:max-h-40 lg:max-h-48 w-auto object-contain"
+          />
+
+          {/* İnce ayırıcı çizgi */}
+          <div className="w-12 h-px bg-gray-200" />
+
+          {/* QR Code - minimal */}
+          <div className="p-2 rounded-lg border border-gray-100">
+            <img
+              src={qrCodeUrl}
+              alt="QR Code"
+              className="w-20 h-20 md:w-24 md:h-24"
+            />
+          </div>
+
+          {/* Dönen mesaj */}
+          <motion.p
+            key={`msg-${rotatingLanguage}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="text-xs md:text-sm tracking-widest text-gray-300 uppercase"
+          >
+            {getRotatingText("attractMessage")}
+          </motion.p>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

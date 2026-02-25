@@ -409,6 +409,8 @@ export function BrandPage() {
             slideshowImages={settings?.slideshow_images}
             slideshowInterval={settings?.slideshow_interval}
             slideshowTransition={settings?.slideshow_transition}
+            brandLogo={brand?.logo}
+            brandName={brand?.name}
           />
         )}
       </AnimatePresence>
