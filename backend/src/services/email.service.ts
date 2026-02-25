@@ -7,6 +7,7 @@ interface OrderWithItems {
   orderNumber: string;
   firstName: string;
   lastName: string;
+  email: string | null;
   phone: string;
   address: string;
   brandSlug: string | null;
@@ -208,6 +209,135 @@ export async function sendOrderNotification(
   } else {
     console.log(
       `Siparis bildirimi gonderildi: ${order.orderNumber} → ${recipients.join(", ")}`,
+    );
+  }
+}
+
+function buildCustomerConfirmationHtml(
+  order: OrderWithItems,
+  siteName: string,
+  siteLogo: string | null,
+): string {
+  const totalAmount = order.items.reduce(
+    (sum, item) => sum + parsePrice(item.price) * item.quantity,
+    0,
+  );
+
+  const itemRows = order.items
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0;">
+          <strong style="color: #111; font-size: 13px;">${item.title}</strong><br/>
+          <span style="color: #999; font-size: 11px;">${item.productCode} | ${item.sizeRange}${item.color ? ` | ${item.color}` : ""}</span>
+        </td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center; font-size: 13px;">
+          x${item.quantity}
+        </td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #111; font-weight: 600; text-align: right; font-size: 13px;">
+          ${item.price}
+        </td>
+      </tr>`,
+    )
+    .join("");
+
+  const logoHtml = siteLogo
+    ? `<img src="${siteLogo}" alt="${siteName}" style="max-width: 140px; height: auto; margin-bottom: 16px;" />`
+    : `<h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #111;">${siteName}</h1>`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 32px 16px;">
+
+    <!-- Header -->
+    <div style="background-color: #ffffff; border-radius: 12px 12px 0 0; padding: 32px; text-align: center; border-bottom: 2px solid #111;">
+      ${logoHtml}
+      <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #111;">
+        Siparisiniz Alindi!
+      </h2>
+      <p style="margin: 8px 0 0 0; font-size: 13px; color: #888; font-family: monospace;">
+        #${order.orderNumber}
+      </p>
+    </div>
+
+    <!-- Mesaj -->
+    <div style="background-color: #ffffff; padding: 24px 32px; border-bottom: 1px solid #f0f0f0;">
+      <p style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;">
+        Sayin ${order.firstName} ${order.lastName},<br/>
+        Siparisiniz basariyla alindi. Asagida siparis detaylarinizi bulabilirsiniz.
+      </p>
+    </div>
+
+    <!-- Urunler -->
+    <div style="background-color: #ffffff; padding: 20px 32px;">
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid #eee;">
+            <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">Urun</th>
+            <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">Adet</th>
+            <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">Fiyat</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRows}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Toplam -->
+    <div style="background-color: #111; border-radius: 0 0 12px 12px; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center;">
+      <span style="color: #888; font-size: 14px;">Toplam</span>
+      <span style="color: #fff; font-size: 22px; font-weight: 700; float: right;">
+        ${totalAmount.toLocaleString("tr-TR")} $
+      </span>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; padding: 20px 0;">
+      <p style="margin: 0; font-size: 11px; color: #aaa;">
+        ${siteName} &bull; ${formatDate(order.createdAt)}
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export async function sendCustomerConfirmation(
+  order: OrderWithItems,
+): Promise<void> {
+  if (!config.RESEND_API_KEY || !order.email) {
+    return;
+  }
+
+  const settings = await prisma.settings.findMany({
+    where: {
+      key: { in: ["site_name", "site_logo"] },
+    },
+  });
+
+  const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  const siteName = settingsMap["site_name"] || "Kiosk QR";
+  const siteLogo = settingsMap["site_logo"] || null;
+
+  const resend = new Resend(config.RESEND_API_KEY);
+  const html = buildCustomerConfirmationHtml(order, siteName, siteLogo);
+
+  const { error } = await resend.emails.send({
+    from: `${siteName} <${config.RESEND_FROM_EMAIL}>`,
+    to: order.email,
+    subject: `Siparisiniz Alindi — #${order.orderNumber}`,
+    html,
+  });
+
+  if (error) {
+    console.error("Musteri onay emaili hatasi:", error);
+  } else {
+    console.log(
+      `Musteri onay emaili gonderildi: ${order.orderNumber} → ${order.email}`,
     );
   }
 }

@@ -30,8 +30,8 @@ const countryCodes = [
 ];
 
 interface CheckoutForm {
-  firstName: string;
-  lastName: string;
+  fullName: string;
+  email: string;
   phone: string;
   address: string;
 }
@@ -68,7 +68,7 @@ function buildWhatsAppMessage(
   const lines = [
     `*YENI SIPARIS - ${orderNumber}*`,
     "",
-    `*Musteri:* ${form.firstName} ${form.lastName}`,
+    `*Musteri:* ${form.fullName}`,
     `*Telefon:* ${countryCode}${form.phone}`,
     `*Adres:* ${form.address}`,
     "",
@@ -122,6 +122,11 @@ export function CheckoutPage() {
   const onSubmit = async (data: CheckoutForm) => {
     if (items.length === 0) return;
 
+    // fullName'i firstName/lastName'e ayir
+    const nameParts = data.fullName.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     const orderItems = items.map((item) => ({
       productId: item.product.id,
       productCode: item.product.productCode,
@@ -136,8 +141,9 @@ export function CheckoutPage() {
 
     try {
       const order = await createOrder.mutateAsync({
-        firstName: data.firstName,
-        lastName: data.lastName,
+        firstName,
+        lastName,
+        email: data.email || undefined,
         phone: `${countryCode}${data.phone}`,
         address: data.address,
         brandSlug,
@@ -466,22 +472,20 @@ export function CheckoutPage() {
                   Musteri Bilgileri
                 </h3>
                 <div className="space-y-3 mb-5">
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      {...register("firstName", { required: true })}
-                      placeholder="Ad"
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all ${
-                        errors.firstName ? "border-red-400" : "border-gray-200"
-                      }`}
-                    />
-                    <input
-                      {...register("lastName", { required: true })}
-                      placeholder="Soyad"
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all ${
-                        errors.lastName ? "border-red-400" : "border-gray-200"
-                      }`}
-                    />
-                  </div>
+                  <input
+                    {...register("fullName", { required: true })}
+                    placeholder="Ad Soyad"
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all ${
+                      errors.fullName ? "border-red-400" : "border-gray-200"
+                    }`}
+                  />
+
+                  <input
+                    {...register("email")}
+                    placeholder="E-posta (opsiyonel)"
+                    type="email"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all"
+                  />
 
                   <div className="flex gap-2">
                     <select

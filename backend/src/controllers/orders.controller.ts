@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import * as ordersService from "../services/orders.service.js";
 
 export async function createOrder(req: Request, res: Response) {
-  const { firstName, lastName, phone, address, brandSlug, items } = req.body;
+  const { firstName, lastName, email, phone, address, brandSlug, items } =
+    req.body;
 
   if (!firstName || !lastName || !phone || !address) {
     return res.status(400).json({ error: "Tum musteri bilgileri zorunludur" });
@@ -14,6 +15,7 @@ export async function createOrder(req: Request, res: Response) {
   const order = await ordersService.createOrder({
     firstName,
     lastName,
+    email,
     phone,
     address,
     brandSlug,

@@ -1,9 +1,13 @@
 import { prisma } from "../config/database.js";
-import { sendOrderNotification } from "./email.service.js";
+import {
+  sendOrderNotification,
+  sendCustomerConfirmation,
+} from "./email.service.js";
 
 interface CreateOrderInput {
   firstName: string;
   lastName: string;
+  email?: string;
   phone: string;
   address: string;
   brandSlug?: string;
@@ -35,6 +39,7 @@ export async function createOrder(input: CreateOrderInput) {
       orderNumber,
       firstName: input.firstName,
       lastName: input.lastName,
+      email: input.email || null,
       phone: input.phone,
       address: input.address,
       brandSlug: input.brandSlug,
@@ -57,9 +62,12 @@ export async function createOrder(input: CreateOrderInput) {
     },
   });
 
-  // Fire-and-forget: email hatasi siparis akisini etkilememeli
+  // Fire-and-forget: email hatalari siparis akisini etkilememeli
   sendOrderNotification(order).catch((err) =>
-    console.error("Email gonderilemedi:", err),
+    console.error("Admin bildirim emaili gonderilemedi:", err),
+  );
+  sendCustomerConfirmation(order).catch((err) =>
+    console.error("Musteri onay emaili gonderilemedi:", err),
   );
 
   return order;

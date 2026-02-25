@@ -70,6 +70,7 @@ interface ApiCategory {
 export interface CreateOrderInput {
   firstName: string;
   lastName: string;
+  email?: string;
   phone: string;
   address: string;
   brandSlug?: string;

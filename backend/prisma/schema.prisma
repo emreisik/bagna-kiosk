@@ -139,6 +139,7 @@ model Order {
   orderNumber String      @unique
   firstName   String
   lastName    String
+  email       String?
   phone       String
   address     String
   brandSlug   String?
