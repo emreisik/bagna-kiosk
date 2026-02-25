@@ -81,3 +81,17 @@ export async function getOrderById(id: string) {
     include: { items: true },
   });
 }
+
+export async function updateOrderStatus(id: string, status: string) {
+  return prisma.order.update({
+    where: { id },
+    data: { status },
+    include: { items: true },
+  });
+}
+
+export async function deleteOrder(id: string) {
+  return prisma.order.delete({
+    where: { id },
+  });
+}

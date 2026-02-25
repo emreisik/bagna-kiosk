@@ -5,6 +5,7 @@ import * as categoriesController from "../controllers/categories.controller.js";
 import * as usersController from "../controllers/users.controller.js";
 import * as settingsController from "../controllers/settings.controller.js";
 import * as uploadController from "../controllers/upload.controller.js";
+import * as ordersController from "../controllers/orders.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
 
@@ -95,6 +96,12 @@ router.post(
   authMiddleware,
   settingsController.clearCache,
 );
+
+// Orders (Protected)
+router.get("/orders", authMiddleware, ordersController.getOrders);
+router.get("/orders/:id", authMiddleware, ordersController.getOrderById);
+router.put("/orders/:id", authMiddleware, ordersController.updateOrderStatus);
+router.delete("/orders/:id", authMiddleware, ordersController.deleteOrder);
 
 // Upload (Protected)
 router.post(

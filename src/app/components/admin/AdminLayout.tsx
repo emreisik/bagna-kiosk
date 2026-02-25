@@ -9,6 +9,7 @@ import {
   LogOut,
   Layers,
   Languages,
+  ShoppingCart,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -29,7 +30,13 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
     superAdminOnly: true,
   },
-  { name: "Ürünler", path: "/admin/products", icon: Package }, // Tüm adminler görebilir
+  { name: "Ürünler", path: "/admin/products", icon: Package },
+  {
+    name: "Siparişler",
+    path: "/admin/orders",
+    icon: ShoppingCart,
+    superAdminOnly: true,
+  },
   {
     name: "Markalar",
     path: "/admin/brands",

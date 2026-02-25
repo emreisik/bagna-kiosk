@@ -104,8 +104,20 @@ export interface OrderResponse {
     sizeRange: string;
     imageUrl: string;
     quantity: number;
+    variantId?: string | null;
+    color?: string | null;
   }>;
   createdAt: string;
+}
+
+export interface OrdersListResponse {
+  data: OrderResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface ProductFilters {
@@ -595,6 +607,39 @@ class ApiClient {
   async adminClearCache(token: string): Promise<any> {
     return this.request("/admin/settings/clear-cache", {
       method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  // Admin Orders
+  async adminGetOrders(
+    token: string,
+    page = 1,
+    limit = 50,
+  ): Promise<OrdersListResponse> {
+    return this.request<OrdersListResponse>(
+      `/admin/orders?page=${page}&limit=${limit}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  }
+
+  async adminUpdateOrderStatus(
+    id: string,
+    status: string,
+    token: string,
+  ): Promise<OrderResponse> {
+    return this.request<OrderResponse>(`/admin/orders/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async adminDeleteOrder(id: string, token: string): Promise<void> {
+    return this.request(`/admin/orders/${id}`, {
+      method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
   }

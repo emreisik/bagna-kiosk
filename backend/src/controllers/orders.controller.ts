@@ -43,3 +43,25 @@ export async function getOrderById(req: Request, res: Response) {
   }
   res.json(order);
 }
+
+export async function updateOrderStatus(req: Request, res: Response) {
+  const id = typeof req.params.id === "string" ? req.params.id : "";
+  if (!id) {
+    return res.status(400).json({ error: "Gecersiz siparis ID" });
+  }
+  const { status } = req.body;
+  if (!status) {
+    return res.status(400).json({ error: "Status alani zorunludur" });
+  }
+  const order = await ordersService.updateOrderStatus(id, status);
+  res.json(order);
+}
+
+export async function deleteOrder(req: Request, res: Response) {
+  const id = typeof req.params.id === "string" ? req.params.id : "";
+  if (!id) {
+    return res.status(400).json({ error: "Gecersiz siparis ID" });
+  }
+  await ordersService.deleteOrder(id);
+  res.json({ success: true });
+}

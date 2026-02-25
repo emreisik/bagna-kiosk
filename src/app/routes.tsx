@@ -12,6 +12,7 @@ import { AdminCategoriesPage } from "./pages/AdminCategoriesPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { AdminSettingsPage } from "./pages/AdminSettingsPage";
 import { AdminTranslationsPage } from "./pages/AdminTranslationsPage";
+import { AdminOrdersPage } from "./pages/AdminOrdersPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
@@ -98,6 +99,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute requireSuperAdmin>
         <AdminTranslationsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/orders",
+    element: (
+      <ProtectedRoute requireSuperAdmin>
+        <AdminOrdersPage />
       </ProtectedRoute>
     ),
   },
