@@ -180,7 +180,7 @@ export function BrandPage() {
           <div className="flex-1 hidden md:block"></div>
 
           {/* Centered Logo or Brand Name */}
-          <div className="flex-1 flex justify-start md:justify-center">
+          <div className="flex-1 flex justify-start md:justify-center items-center gap-3 md:gap-5">
             {settings?.site_logo ? (
               <img
                 src={normalizeImageUrl(settings.site_logo)}
@@ -192,6 +192,18 @@ export function BrandPage() {
               <h1 className="text-lg md:text-xl lg:text-2xl font-light tracking-[0.2em] md:tracking-[0.3em] text-black">
                 {settings?.site_name || "Kiosk QR"}
               </h1>
+            )}
+
+            {/* Marka logosu */}
+            {brand?.logo && (
+              <>
+                <div className="w-px h-8 md:h-10 bg-gray-200" />
+                <img
+                  src={normalizeImageUrl(brand.logo)}
+                  alt={brand.name}
+                  className="max-h-8 md:max-h-10 lg:max-h-12 w-auto object-contain"
+                />
+              </>
             )}
           </div>
 

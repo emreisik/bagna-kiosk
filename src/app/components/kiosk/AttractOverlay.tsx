@@ -225,40 +225,64 @@ export function AttractOverlay({
   // Generate QR code URL (using a QR API service)
   // Use full URL (including path) so QR code points to current page
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}&color=000000&bgcolor=FFFFFF`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}&color=000000&bgcolor=FFFFFF`;
 
-  // Marka modu: beyaz minimal tasarım
+  // Marka modu: slideshow arka plan + beyaz merkez panel
   if (isBrandMode) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white overflow-hidden"
+        className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
         style={{ cursor: "pointer" }}
       >
-        {/* Marka logosu - merkez, büyük */}
+        {/* Arka plan: Slideshow görselleri */}
+        <div className="absolute inset-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`brand-slide-${currentProductIndex}`}
+              {...getTransitionVariants()}
+              className="absolute inset-0"
+              style={{
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+              }}
+            >
+              <img
+                src={normalizeImageUrl(allProductImages[currentProductIndex])}
+                alt={`Slide ${currentProductIndex + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+          </AnimatePresence>
+          {/* Koyu overlay - beyaz panelin okunabilirliği için */}
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+
+        {/* Merkez: Beyaz panel */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-          className="flex flex-col items-center gap-8 md:gap-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.7, ease: "easeOut" }}
+          className="relative z-10 bg-white rounded-3xl shadow-2xl px-12 py-14 md:px-20 md:py-20 flex flex-col items-center gap-8 md:gap-10 max-w-[85vw] md:max-w-md"
         >
+          {/* Marka logosu - büyük ve net */}
           <img
             src={normalizeImageUrl(brandLogo)}
             alt={brandName || "Brand"}
-            className="max-h-28 md:max-h-40 lg:max-h-48 w-auto object-contain"
+            className="max-h-20 md:max-h-28 lg:max-h-32 w-auto object-contain"
           />
 
           {/* İnce ayırıcı çizgi */}
-          <div className="w-12 h-px bg-gray-200" />
+          <div className="w-16 h-px bg-gray-200" />
 
-          {/* QR Code - minimal */}
-          <div className="p-2 rounded-lg border border-gray-100">
+          {/* QR Code - büyük, net */}
+          <div className="p-3 rounded-2xl border border-gray-100 bg-white">
             <img
               src={qrCodeUrl}
               alt="QR Code"
-              className="w-20 h-20 md:w-24 md:h-24"
+              className="w-36 h-36 md:w-44 md:h-44"
             />
           </div>
 
@@ -269,11 +293,27 @@ export function AttractOverlay({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-xs md:text-sm tracking-widest text-gray-300 uppercase"
+            className="text-sm md:text-base tracking-[0.2em] text-gray-400 uppercase font-light"
           >
             {getRotatingText("attractMessage")}
           </motion.p>
         </motion.div>
+
+        {/* Slide indicator - alt kısım */}
+        {allProductImages.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+            {allProductImages.slice(0, 10).map((_, index) => (
+              <div
+                key={index}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  index === currentProductIndex % 10
+                    ? "w-6 bg-white"
+                    : "w-1 bg-white/30"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </motion.div>
     );
   }
