@@ -28,8 +28,14 @@ export function AdminBulkUploadPage() {
   const [products, setProducts] = useState<ProductDraft[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
+
+  // Toplu seçim state'leri
+  const [bulkCategoryId, setBulkCategoryId] = useState("");
+  const [bulkSubcategoryId, setBulkSubcategoryId] = useState("");
+  const [bulkBrandId, setBulkBrandId] = useState("");
+  const [bulkSizeRange, setBulkSizeRange] = useState("");
+  const [bulkPrice, setBulkPrice] = useState("");
 
   // Notification Modal State
   const [notificationModal, setNotificationModal] = useState({
@@ -134,6 +140,26 @@ export function AdminBulkUploadPage() {
     );
   };
 
+  // Toplu seçimi tüm ürünlere uygula
+  const applyBulkToAll = () => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.uploadStatus !== "waiting") return p;
+        const updates: Partial<ProductDraft> = {};
+        if (bulkCategoryId) {
+          updates.categoryId = bulkCategoryId;
+          updates.subcategoryId = bulkSubcategoryId || "";
+        }
+        if (bulkBrandId) updates.brandId = bulkBrandId;
+        if (bulkSizeRange) updates.sizeRange = bulkSizeRange;
+        if (bulkPrice) updates.price = bulkPrice;
+        return { ...p, ...updates };
+      }),
+    );
+  };
+
+  const bulkCategory = categories.find((c) => c.id === bulkCategoryId);
+
   const handleSubmitAll = async () => {
     // Validation: Tüm gerekli alanları kontrol et
     const missingFields = products.filter(
@@ -187,7 +213,7 @@ export function AdminBulkUploadPage() {
               imageUrl: url,
               displayOrder: index,
             })),
-          },
+          } as any,
           token,
         );
 
@@ -324,6 +350,147 @@ export function AdminBulkUploadPage() {
                 <strong>{products.length} ürün</strong> hazır. Lütfen her ürün
                 için bilgileri girin ve "Tümünü Kaydet" butonuna tıklayın.
               </p>
+            </div>
+
+            {/* Toplu Ayar Paneli */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                Tümüne Uygula
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {/* Toplu Kategori */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Kategori
+                  </label>
+                  <select
+                    value={bulkCategoryId}
+                    onChange={(e) => {
+                      setBulkCategoryId(e.target.value);
+                      setBulkSubcategoryId("");
+                    }}
+                    className="w-full px-2 py-2 border rounded text-sm"
+                    disabled={processing}
+                  >
+                    <option value="">-</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Toplu Alt Kategori */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Alt Kategori
+                  </label>
+                  <select
+                    value={bulkSubcategoryId}
+                    onChange={(e) => setBulkSubcategoryId(e.target.value)}
+                    className="w-full px-2 py-2 border rounded text-sm"
+                    disabled={!bulkCategoryId || processing}
+                  >
+                    <option value="">-</option>
+                    {bulkCategory?.subcategories?.map((sub: any) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Toplu Marka */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Marka
+                  </label>
+                  <select
+                    value={bulkBrandId}
+                    onChange={(e) => setBulkBrandId(e.target.value)}
+                    className="w-full px-2 py-2 border rounded text-sm"
+                    disabled={processing || !canEditAllBrands}
+                  >
+                    <option value="">-</option>
+                    {availableBrands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Toplu Beden */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Beden
+                  </label>
+                  <select
+                    value={bulkSizeRange}
+                    onChange={(e) => setBulkSizeRange(e.target.value)}
+                    className="w-full px-2 py-2 border rounded text-sm"
+                    disabled={processing}
+                  >
+                    <option value="">-</option>
+                    <option value="36-42">36-42</option>
+                    <option value="42-48">42-48</option>
+                    <option value="S-XL">S-XL</option>
+                    <option value="M-XXL">M-XXL</option>
+                    <option value="XS-L">XS-L</option>
+                  </select>
+                </div>
+
+                {/* Toplu Fiyat */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Fiyat
+                  </label>
+                  <input
+                    type="text"
+                    value={bulkPrice}
+                    onChange={(e) => setBulkPrice(e.target.value)}
+                    placeholder="Örn: 145"
+                    className="w-full px-2 py-2 border rounded text-sm"
+                    disabled={processing}
+                  />
+                </div>
+              </div>
+
+              {/* Hızlı fiyat butonları + Uygula */}
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex gap-1.5 flex-wrap">
+                  {[10, 20, 30, 50, 100, 150, 200].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setBulkPrice(`${value}`)}
+                      disabled={processing}
+                      className={`px-2.5 py-1 text-xs border rounded transition-colors ${
+                        bulkPrice === `${value}`
+                          ? "bg-black text-white border-black"
+                          : "border-gray-300 hover:bg-gray-100"
+                      } disabled:opacity-50`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={applyBulkToAll}
+                  disabled={
+                    processing ||
+                    (!bulkCategoryId &&
+                      !bulkBrandId &&
+                      !bulkSizeRange &&
+                      !bulkPrice)
+                  }
+                  className="px-5 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  Tümüne Uygula
+                </button>
+              </div>
             </div>
 
             {products.map((product, index) => {
