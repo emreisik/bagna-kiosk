@@ -33,7 +33,11 @@ export async function getOrders(req: Request, res: Response) {
 }
 
 export async function getOrderById(req: Request, res: Response) {
-  const order = await ordersService.getOrderById(req.params.id);
+  const id = typeof req.params.id === "string" ? req.params.id : "";
+  if (!id) {
+    return res.status(400).json({ error: "Gecersiz siparis ID" });
+  }
+  const order = await ordersService.getOrderById(id);
   if (!order) {
     return res.status(404).json({ error: "Siparis bulunamadi" });
   }
