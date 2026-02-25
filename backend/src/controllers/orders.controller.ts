@@ -24,11 +24,11 @@ export async function createOrder(req: Request, res: Response) {
 }
 
 export async function getOrders(req: Request, res: Response) {
-  const { page, limit } = req.query;
-  const orders = await ordersService.getOrders(
-    page ? parseInt(page as string) : 1,
-    limit ? parseInt(limit as string) : 50,
-  );
+  const page =
+    typeof req.query.page === "string" ? parseInt(req.query.page) : 1;
+  const limit =
+    typeof req.query.limit === "string" ? parseInt(req.query.limit) : 50;
+  const orders = await ordersService.getOrders(page, limit);
   res.json(orders);
 }
 
