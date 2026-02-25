@@ -274,12 +274,12 @@ export function AttractOverlay({
             className="max-h-20 md:max-h-28 lg:max-h-32 w-auto object-contain"
           />
 
-          {/* Ayırıcı çizgi + marka adı */}
+          {/* Ayırıcı çizgi + site adı */}
           <div className="flex flex-col items-center gap-3">
             <div className="w-16 h-px bg-gray-200" />
-            {brandName && (
-              <p className="text-[10px] md:text-xs tracking-[0.35em] text-gray-400 uppercase font-extralight">
-                {brandName}
+            {siteName && (
+              <p className="text-[10px] md:text-xs tracking-[0.35em] text-red-600 uppercase font-extralight">
+                {siteName}
               </p>
             )}
           </div>
