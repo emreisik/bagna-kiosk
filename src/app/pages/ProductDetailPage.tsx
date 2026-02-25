@@ -1,6 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, ShoppingBag, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  ShoppingBag,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useProduct } from "../../hooks/useProducts";
 import { useCart } from "../../contexts/CartContext";
 import { useSettings } from "../../hooks/useSettings";
@@ -14,13 +20,16 @@ export function ProductDetailPage() {
     productId: string;
   }>();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItem, itemCount, openCart } = useCart();
   const { data: product, isLoading } = useProduct(productId);
   const { data: settings } = useSettings();
   const currency = useCurrency();
 
   // Image gallery state
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   // Variant selection state
   const [selectedSizeRange, setSelectedSizeRange] = useState<string | null>(
@@ -62,21 +71,60 @@ export function ProductDetailPage() {
     );
   }, [product?.variants, selectedSizeRange, selectedColor, hasVariants]);
 
-  // Auto-select first size range on load
+  // Reset selections when product changes
   useEffect(() => {
-    if (availableSizeRanges.length > 0 && !selectedSizeRange) {
+    setSelectedSizeRange(null);
+    setSelectedColor(null);
+    setSelectedImageIndex(0);
+  }, [productId]);
+
+  // Auto-select if only one size range
+  useEffect(() => {
+    if (availableSizeRanges.length === 1 && !selectedSizeRange) {
       setSelectedSizeRange(availableSizeRanges[0]);
     }
   }, [availableSizeRanges, selectedSizeRange]);
 
-  // Auto-select first color when size range changes
+  // Auto-select if only one color for selected size range
   useEffect(() => {
-    if (availableColors.length > 0) {
+    if (availableColors.length === 1 && !selectedColor) {
       setSelectedColor(availableColors[0]);
-    } else {
-      setSelectedColor(null);
     }
-  }, [availableColors]);
+  }, [availableColors, selectedColor]);
+
+  const images =
+    product?.images || (product?.imageUrl ? [product.imageUrl] : []);
+
+  // Swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0 && selectedImageIndex < images.length - 1) {
+        setSelectedImageIndex((prev) => prev + 1);
+      } else if (diff < 0 && selectedImageIndex > 0) {
+        setSelectedImageIndex((prev) => prev - 1);
+      }
+    }
+  }, [selectedImageIndex, images.length]);
+
+  const goToPrevImage = () => {
+    if (selectedImageIndex > 0) setSelectedImageIndex((prev) => prev - 1);
+  };
+
+  const goToNextImage = () => {
+    if (selectedImageIndex < images.length - 1)
+      setSelectedImageIndex((prev) => prev + 1);
+  };
 
   // Displayed values
   const displayPrice = selectedVariant?.price || product?.price || "";
@@ -91,22 +139,16 @@ export function ProductDetailPage() {
       })
     : priceNumeric;
 
-  const images =
-    product?.images || (product?.imageUrl ? [product.imageUrl] : []);
-
+  // Varyantli urunlerde: beden secilmeli, renk secilmeli
+  // Varyantsiz urunlerde: direkt eklenebilir
   const canAddToCart = !hasVariants || selectedVariant !== null;
 
   const handleAddToCart = () => {
     if (!product || !canAddToCart) return;
     addItem(product, selectedVariant || undefined);
     setAddedToCart(true);
+    openCart();
     setTimeout(() => setAddedToCart(false), 1500);
-  };
-
-  const handleBuyNow = () => {
-    if (!product || !canAddToCart) return;
-    addItem(product, selectedVariant || undefined);
-    navigate(`/${brandSlug}/checkout`);
   };
 
   if (isLoading) {
@@ -160,7 +202,18 @@ export function ProductDetailPage() {
               </h1>
             )}
 
-            <div className="w-[60px]" />
+            {/* Cart Icon */}
+            <button
+              onClick={openCart}
+              className="relative p-2 hover:bg-gray-50 rounded-full transition-colors"
+            >
+              <ShoppingBag className="w-5 h-5 text-black" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-black text-white rounded-full text-[10px] font-medium flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -170,14 +223,58 @@ export function ProductDetailPage() {
         <div className="lg:grid lg:grid-cols-2 lg:gap-12 xl:gap-16">
           {/* Sol: Gorsel Galerisi */}
           <div className="mb-8 lg:mb-0">
-            {/* Ana Gorsel */}
-            <div className="aspect-[3/4] bg-gray-50 rounded-lg overflow-hidden mb-3">
+            {/* Ana Gorsel - Swipeable */}
+            <div
+              ref={galleryRef}
+              className="relative aspect-[3/4] bg-gray-50 rounded-lg overflow-hidden mb-3 select-none"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {images.length > 0 && (
                 <img
                   src={normalizeImageUrl(images[selectedImageIndex])}
                   alt={`${product.title} - ${selectedImageIndex + 1}`}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
+                  draggable={false}
                 />
+              )}
+
+              {/* Arrow Buttons */}
+              {images.length > 1 && (
+                <>
+                  {selectedImageIndex > 0 && (
+                    <button
+                      onClick={goToPrevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    </button>
+                  )}
+                  {selectedImageIndex < images.length - 1 && (
+                    <button
+                      onClick={goToNextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-700" />
+                    </button>
+                  )}
+
+                  {/* Dot Indicators */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImageIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          index === selectedImageIndex
+                            ? "bg-black w-4"
+                            : "bg-black/30"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
@@ -208,28 +305,21 @@ export function ProductDetailPage() {
           {/* Sag: Urun Bilgileri + Varyant Secimi */}
           <div className="lg:sticky lg:top-6 lg:self-start">
             {/* Urun Kodu */}
-            <p className="text-xs text-gray-400 font-light tracking-[0.15em] uppercase mb-2">
+            <p className="text-xs text-gray-400 font-medium tracking-[0.15em] uppercase mb-1">
               {product.productCode}
             </p>
 
             {/* Baslik */}
-            <h1 className="text-2xl md:text-3xl font-light text-black mb-4 leading-tight">
+            <h1 className="text-xl md:text-2xl font-medium text-black mb-4 leading-tight">
               {product.title}
             </h1>
 
             {/* Fiyat */}
-            <div className="mb-6">
-              <p className="text-2xl md:text-3xl font-semibold text-black">
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <p className="text-2xl md:text-3xl font-bold text-black">
                 {priceFormatted} {currency}
               </p>
             </div>
-
-            {/* Aciklama */}
-            {product.shortDesc && (
-              <p className="text-sm text-gray-500 font-light mb-8 leading-relaxed">
-                {product.shortDesc}
-              </p>
-            )}
 
             {/* Varyant Secimi */}
             {hasVariants ? (
@@ -237,7 +327,12 @@ export function ProductDetailPage() {
                 {/* Beden Araligi Secimi */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
-                    Beden Araligi
+                    Beden Seciniz
+                    {selectedSizeRange && (
+                      <span className="ml-2 text-black normal-case tracking-normal">
+                        — {selectedSizeRange}
+                      </span>
+                    )}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableSizeRanges.map((sr) => (
@@ -259,11 +354,11 @@ export function ProductDetailPage() {
                   </div>
                 </div>
 
-                {/* Renk Secimi */}
-                {availableColors.length > 0 && (
+                {/* Renk Secimi - sadece beden secildikten sonra gosterilir */}
+                {selectedSizeRange && availableColors.length > 0 && (
                   <div>
                     <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
-                      Renk
+                      Renk Seciniz
                       {selectedColor && (
                         <span className="ml-2 text-black normal-case tracking-normal">
                           — {selectedColor}
@@ -287,12 +382,21 @@ export function ProductDetailPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Secim uyarisi */}
+                {!canAddToCart && (
+                  <p className="text-xs text-gray-400 font-light">
+                    {!selectedSizeRange
+                      ? "Lutfen bir beden secin"
+                      : "Lutfen bir renk secin"}
+                  </p>
+                )}
               </div>
             ) : (
               /* Varyant yoksa mevcut beden araligini goster */
               <div className="mb-8">
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
-                  Beden Araligi
+                  Beden
                 </label>
                 <div className="inline-block px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
                   {displaySizeRange}
@@ -300,62 +404,30 @@ export function ProductDetailPage() {
               </div>
             )}
 
-            {/* Sepete Ekle + Satin Al */}
-            <div className="space-y-3">
-              <button
-                onClick={handleAddToCart}
-                disabled={!canAddToCart}
-                className={`w-full py-4 border-2 rounded-lg uppercase tracking-widest text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                  addedToCart
-                    ? "border-green-600 bg-green-600 text-white"
-                    : canAddToCart
-                      ? "border-black bg-white text-black hover:bg-gray-50"
-                      : "border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed"
-                }`}
-              >
-                {addedToCart ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Sepete Eklendi
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    Sepete Ekle
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={handleBuyNow}
-                disabled={!canAddToCart}
-                className={`w-full py-4 rounded-lg uppercase tracking-widest text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                  canAddToCart
+            {/* Sepete Ekle */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!canAddToCart}
+              className={`w-full py-4 rounded-lg uppercase tracking-widest text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                addedToCart
+                  ? "bg-green-600 text-white"
+                  : canAddToCart
                     ? "bg-black text-white hover:bg-gray-900"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                Hemen Satin Al · {priceFormatted} {currency}
-              </button>
-            </div>
-
-            {/* Ek Bilgi */}
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-400 font-light mb-1">Kategori</p>
-                  <p className="text-gray-700">{product.category}</p>
-                </div>
-                {product.subcategory && (
-                  <div>
-                    <p className="text-gray-400 font-light mb-1">
-                      Alt Kategori
-                    </p>
-                    <p className="text-gray-700">{product.subcategory}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+              }`}
+            >
+              {addedToCart ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Sepete Eklendi
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4" />
+                  Sepete Ekle
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

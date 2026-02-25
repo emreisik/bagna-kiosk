@@ -5,8 +5,9 @@ import { GalleryGrid } from "../components/kiosk/GalleryGrid";
 import { FilterSheet } from "../components/kiosk/FilterSheet";
 import { KioskButton } from "../components/kiosk/KioskButton";
 import { useI18n } from "../../contexts/I18nContext";
-import { SlidersHorizontal, ChevronDown, X } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, X, ShoppingBag } from "lucide-react";
 import { NumericSearch } from "../components/kiosk/NumericSearch";
+import { useCart } from "../../contexts/CartContext";
 import { useBrand } from "../../hooks/useBrand";
 import { kioskConfig } from "../../config/kiosk.config";
 import { useIdleTimer } from "../../hooks/useIdleTimer";
@@ -27,6 +28,7 @@ export function BrandPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { itemCount, openCart } = useCart();
 
   // Fetch settings first (needed for idle timeout and logo)
   const { data: settings } = useSettings();
@@ -182,8 +184,21 @@ export function BrandPage() {
             )}
           </div>
 
-          {/* Language Selector - Right aligned */}
-          <div className="flex-1 flex justify-end">
+          {/* Cart + Language Selector - Right aligned */}
+          <div className="flex-1 flex justify-end items-center gap-2 md:gap-3">
+            {/* Cart Icon */}
+            <button
+              onClick={openCart}
+              className="relative p-2 hover:bg-gray-50 rounded-full transition-colors"
+            >
+              <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-black" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-black text-white rounded-full text-[10px] font-medium flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </button>
+
             <div className="relative">
               <button
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}

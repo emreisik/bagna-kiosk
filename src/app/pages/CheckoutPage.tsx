@@ -214,35 +214,18 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - logo ve sepet ikonu yok */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-4 md:py-5">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(`/${brandSlug || ""}`)}
-              className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-light uppercase tracking-wide">
-                Alisverise Devam Et
-              </span>
-            </button>
-
-            {settings?.site_logo ? (
-              <img
-                src={normalizeImageUrl(settings.site_logo)}
-                alt={settings?.site_name || ""}
-                style={{ width: Math.min(settings.logo_width || 144, 120) }}
-                className="h-auto object-contain"
-              />
-            ) : (
-              <h1 className="text-lg font-light tracking-[0.2em] text-black uppercase">
-                {settings?.site_name || "Kiosk QR"}
-              </h1>
-            )}
-
-            <div className="w-[80px]" />
-          </div>
+          <button
+            onClick={() => navigate(`/${brandSlug || ""}`)}
+            className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-light uppercase tracking-wide">
+              Alisverise Devam Et
+            </span>
+          </button>
         </div>
       </div>
 
