@@ -2,10 +2,18 @@ import { Request, Response } from "express";
 import * as ordersService from "../services/orders.service.js";
 
 export async function createOrder(req: Request, res: Response) {
-  const { firstName, lastName, email, phone, address, brandSlug, items } =
-    req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    address,
+    brandSlug,
+    language,
+    items,
+  } = req.body;
 
-  if (!firstName || !lastName || !phone || !address) {
+  if (!firstName || !phone || !address) {
     return res.status(400).json({ error: "Tum musteri bilgileri zorunludur" });
   }
   if (!items || !Array.isArray(items) || items.length === 0) {
@@ -19,6 +27,7 @@ export async function createOrder(req: Request, res: Response) {
     phone,
     address,
     brandSlug,
+    language,
     items,
   });
 

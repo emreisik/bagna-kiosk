@@ -10,6 +10,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { useCart, getCartKey } from "../../contexts/CartContext";
+import { useI18n } from "../../contexts/I18nContext";
 import { useCreateOrder } from "../../hooks/useOrders";
 import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
@@ -17,6 +18,11 @@ import { normalizeImageUrl } from "../../utils/imageUrl";
 import { motion, AnimatePresence } from "motion/react";
 
 const WHATSAPP_NUMBER = "905385717136";
+const localeMap: Record<string, string> = {
+  tr: "tr-TR",
+  en: "en-US",
+  ru: "ru-RU",
+};
 
 const countryCodes = [
   { code: "+90", flag: "\ud83c\uddf9\ud83c\uddf7", label: "TR" },
@@ -43,8 +49,8 @@ function parsePrice(priceStr: string): number {
 }
 
 /** Fiyati formatla: 1200 -> "1.200" */
-function formatPrice(amount: number): string {
-  return amount.toLocaleString("tr-TR", {
+function formatPrice(amount: number, lang: string = "tr"): string {
+  return amount.toLocaleString(localeMap[lang] || "tr-TR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
@@ -55,6 +61,7 @@ function buildWhatsAppMessage(
   form: CheckoutForm,
   countryCode: string,
   currency: string,
+  lang: string,
   items: {
     productCode: string;
     title: string;
@@ -65,24 +72,24 @@ function buildWhatsAppMessage(
   }[],
   total: number,
 ) {
+  const locale = localeMap[lang] || "tr-TR";
   const lines = [
-    `*YENI SIPARIS - ${orderNumber}*`,
+    `*${orderNumber}*`,
     "",
-    `*Musteri:* ${form.fullName}`,
-    `*Telefon:* ${countryCode}${form.phone}`,
-    `*Adres:* ${form.address}`,
+    `*${form.fullName}*`,
+    `${countryCode}${form.phone}`,
+    `${form.address}`,
     "",
-    "*URUNLER:*",
     ...items.map((item) => {
       const itemPrice = parsePrice(item.price);
       const subtotal = itemPrice * item.quantity;
       const colorInfo = item.color ? ` | ${item.color}` : "";
-      return `- ${item.productCode} | ${item.title} | ${item.sizeRange}${colorInfo} | x${item.quantity} | ${formatPrice(subtotal)} ${currency}`;
+      return `- ${item.productCode} | ${item.title} | ${item.sizeRange}${colorInfo} | x${item.quantity} | ${formatPrice(subtotal, lang)} ${currency}`;
     }),
     "",
-    `*TOPLAM:* ${formatPrice(total)} ${currency}`,
+    `*${formatPrice(total, lang)} ${currency}*`,
     "",
-    `*Siparis Tarihi:* ${new Date().toLocaleDateString("tr-TR")}`,
+    `${new Date().toLocaleDateString(locale)}`,
   ];
 
   return lines.join("\n");
@@ -92,6 +99,7 @@ export function CheckoutPage() {
   const { brandSlug } = useParams<{ brandSlug: string }>();
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, clearCart } = useCart();
+  const { t, language } = useI18n();
   const { data: settings } = useSettings();
   const currency = useCurrency();
   const createOrder = useCreateOrder();
@@ -147,6 +155,7 @@ export function CheckoutPage() {
         phone: `${countryCode}${data.phone}`,
         address: data.address,
         brandSlug,
+        language,
         items: orderItems,
       });
 
@@ -155,6 +164,7 @@ export function CheckoutPage() {
         data,
         countryCode,
         currency,
+        language,
         orderItems,
         cartCalculations.subtotal,
       );
@@ -164,7 +174,8 @@ export function CheckoutPage() {
       setOrderSuccess(order.orderNumber);
       clearCart();
     } catch {
-      alert("Siparis olusturulamadi. Lutfen tekrar deneyin.");
+      // Generic error - not translated (rare edge case)
+      alert("Error. Please try again.");
     }
   };
 
@@ -181,17 +192,17 @@ export function CheckoutPage() {
           <Check className="w-10 h-10 md:w-12 md:h-12 text-white" />
         </motion.div>
         <h2 className="text-2xl md:text-3xl font-light tracking-wide text-black mb-2">
-          SIPARIS ALINDI
+          {t("checkout.orderReceived")}
         </h2>
         <p className="text-gray-500 font-light mb-1">{orderSuccess}</p>
         <p className="text-sm text-gray-400 font-light mb-8">
-          WhatsApp uzerinden bilgilendirileceksiniz.
+          {t("checkout.emailNotice")}
         </p>
         <button
           onClick={() => navigate(`/${brandSlug || ""}`)}
           className="px-8 py-3 bg-black text-white uppercase tracking-widest text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors"
         >
-          Alisverise Devam Et
+          {t("checkout.continueShopping")}
         </button>
       </div>
     );
@@ -204,15 +215,17 @@ export function CheckoutPage() {
         <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
           <ShoppingBag className="w-10 h-10 text-gray-300" />
         </div>
-        <p className="text-xl text-gray-400 font-light mb-2">Sepetiniz bos</p>
+        <p className="text-xl text-gray-400 font-light mb-2">
+          {t("checkout.emptyCart")}
+        </p>
         <p className="text-sm text-gray-300 font-light mb-8">
-          Urun eklemek icin kataloga donun
+          {t("checkout.emptyCartHint")}
         </p>
         <button
           onClick={() => navigate(`/${brandSlug || ""}`)}
           className="px-8 py-3 bg-black text-white uppercase tracking-widest text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors"
         >
-          Alisverise Basla
+          {t("checkout.startShopping")}
         </button>
       </div>
     );
@@ -229,7 +242,7 @@ export function CheckoutPage() {
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-light uppercase tracking-wide">
-              Alisverise Devam Et
+              {t("checkout.continueShopping")}
             </span>
           </button>
         </div>
@@ -238,9 +251,9 @@ export function CheckoutPage() {
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-10">
         {/* Baslik */}
         <h1 className="text-2xl md:text-3xl font-light tracking-wide text-black mb-8 md:mb-10">
-          Sepetiniz
+          {t("checkout.title")}
           <span className="text-gray-400 text-lg md:text-xl ml-2">
-            ({totalItems} urun)
+            ({totalItems} {t("checkout.items")})
           </span>
         </h1>
 
@@ -250,16 +263,16 @@ export function CheckoutPage() {
             {/* Tablo Baslik - Desktop */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 pb-3 border-b border-gray-200 mb-4">
               <span className="col-span-6 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Urun
+                {t("checkout.product")}
               </span>
               <span className="col-span-2 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">
-                Fiyat
+                {t("checkout.price")}
               </span>
               <span className="col-span-2 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">
-                Adet
+                {t("checkout.quantity")}
               </span>
               <span className="col-span-2 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">
-                Toplam
+                {t("checkout.total")}
               </span>
             </div>
 
@@ -303,14 +316,14 @@ export function CheckoutPage() {
                             </button>
                           </div>
                           <p className="text-xs text-gray-400 font-light mb-0.5">
-                            Kod: {item.product.productCode}
+                            {item.product.productCode}
                           </p>
                           <p className="text-xs text-gray-400 font-light">
-                            Beden: {displaySizeRange}
+                            {t("product.size")}: {displaySizeRange}
                           </p>
                           {displayColor && (
                             <p className="text-xs text-gray-400 font-light">
-                              Renk: {displayColor}
+                              {t("product.color")}: {displayColor}
                             </p>
                           )}
                           <div className="flex items-center justify-between mt-3">
@@ -338,7 +351,7 @@ export function CheckoutPage() {
                             </div>
                             {/* Item Total */}
                             <p className="text-base font-semibold text-black">
-                              {formatPrice(itemTotal)} {currency}
+                              {formatPrice(itemTotal, language)} {currency}
                             </p>
                           </div>
                         </div>
@@ -362,18 +375,18 @@ export function CheckoutPage() {
                             {item.product.productCode}
                           </p>
                           <p className="text-xs text-gray-400 font-light">
-                            Beden: {displaySizeRange}
+                            {t("product.size")}: {displaySizeRange}
                           </p>
                           {displayColor && (
                             <p className="text-xs text-gray-400 font-light">
-                              Renk: {displayColor}
+                              {t("product.color")}: {displayColor}
                             </p>
                           )}
                           <button
                             onClick={() => removeItem(cartKey)}
                             className="mt-1 text-xs text-gray-400 hover:text-red-500 transition-colors underline"
                           >
-                            Kaldir
+                            {t("cart.remove")}
                           </button>
                         </div>
                       </div>
@@ -381,7 +394,7 @@ export function CheckoutPage() {
                       {/* Unit Price */}
                       <div className="col-span-2 text-center">
                         <p className="text-sm text-gray-600">
-                          {formatPrice(unitPrice)} {currency}
+                          {formatPrice(unitPrice, language)} {currency}
                         </p>
                       </div>
 
@@ -413,7 +426,7 @@ export function CheckoutPage() {
                       {/* Item Total */}
                       <div className="col-span-2 text-right">
                         <p className="text-sm font-semibold text-black">
-                          {formatPrice(itemTotal)} {currency}
+                          {formatPrice(itemTotal, language)} {currency}
                         </p>
                       </div>
                     </div>
@@ -427,7 +440,7 @@ export function CheckoutPage() {
           <div className="lg:col-span-2 mt-8 lg:mt-0">
             <div className="bg-white rounded-xl p-5 md:p-6 lg:sticky lg:top-6">
               <h2 className="text-lg font-medium text-black mb-5">
-                Siparis Ozeti
+                {t("checkout.orderSummary")}
               </h2>
 
               {/* Item Subtotals Summary */}
@@ -448,7 +461,7 @@ export function CheckoutPage() {
                         <span className="text-gray-400">x{item.quantity}</span>
                       </span>
                       <span className="text-gray-700 font-medium flex-shrink-0">
-                        {formatPrice(itemTotal)} {currency}
+                        {formatPrice(itemTotal, language)} {currency}
                       </span>
                     </div>
                   );
@@ -458,10 +471,11 @@ export function CheckoutPage() {
               <div className="border-t border-gray-100 pt-4 mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-base font-semibold text-black">
-                    Toplam
+                    {t("checkout.total")}
                   </span>
                   <span className="text-xl md:text-2xl font-bold text-black">
-                    {formatPrice(cartCalculations.subtotal)} {currency}
+                    {formatPrice(cartCalculations.subtotal, language)}{" "}
+                    {currency}
                   </span>
                 </div>
               </div>
@@ -469,12 +483,12 @@ export function CheckoutPage() {
               {/* Siparis Formu */}
               <form onSubmit={handleSubmit(onSubmit)}>
                 <h3 className="text-xs font-medium text-gray-400 uppercase tracking-[0.15em] mb-3">
-                  Musteri Bilgileri
+                  {t("checkout.customerInfo")}
                 </h3>
                 <div className="space-y-3 mb-5">
                   <input
                     {...register("fullName", { required: true })}
-                    placeholder="Ad Soyad"
+                    placeholder={t("checkout.fullName")}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all ${
                       errors.fullName ? "border-red-400" : "border-gray-200"
                     }`}
@@ -482,7 +496,7 @@ export function CheckoutPage() {
 
                   <input
                     {...register("email")}
-                    placeholder="E-posta (opsiyonel)"
+                    placeholder={t("checkout.email")}
                     type="email"
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all"
                   />
@@ -501,7 +515,7 @@ export function CheckoutPage() {
                     </select>
                     <input
                       {...register("phone", { required: true })}
-                      placeholder="Telefon"
+                      placeholder={t("checkout.phone")}
                       type="tel"
                       className={`flex-1 px-3 py-2.5 border rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all ${
                         errors.phone ? "border-red-400" : "border-gray-200"
@@ -511,7 +525,7 @@ export function CheckoutPage() {
 
                   <textarea
                     {...register("address", { required: true })}
-                    placeholder="Adres"
+                    placeholder={t("checkout.address")}
                     rows={2}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all resize-none ${
                       errors.address ? "border-red-400" : "border-gray-200"
@@ -526,12 +540,13 @@ export function CheckoutPage() {
                   className="w-full py-3.5 bg-black text-white uppercase tracking-widest text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {createOrder.isPending ? (
-                    "Gonderiliyor..."
+                    t("checkout.sending")
                   ) : (
                     <>
-                      Siparisi Gonder
+                      {t("checkout.submit")}
                       <span className="font-bold">
-                        · {formatPrice(cartCalculations.subtotal)} {currency}
+                        · {formatPrice(cartCalculations.subtotal, language)}{" "}
+                        {currency}
                       </span>
                     </>
                   )}

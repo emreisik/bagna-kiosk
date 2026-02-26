@@ -26,12 +26,86 @@ interface OrderWithItems {
   }>;
 }
 
+// Email cevirileri - backend'de bagimsiz ceviri haritasi
+const emailTranslations: Record<string, Record<string, string>> = {
+  tr: {
+    newOrder: "YENI SIPARIS",
+    customerInfo: "Musteri Bilgileri",
+    fullName: "Ad Soyad",
+    phone: "Telefon",
+    address: "Adres",
+    orderDetails: "Siparis Detaylari",
+    product: "Urun",
+    size: "Beden",
+    color: "Renk",
+    quantity: "Adet",
+    price: "Fiyat",
+    total: "Toplam",
+    orderConfirmed: "Siparisiniz Alindi!",
+    dear: "Sayin",
+    orderConfirmedMessage:
+      "Siparisiniz basariyla alindi. Asagida siparis detaylarinizi bulabilirsiniz.",
+    subjectNewOrder: "Yeni Siparis",
+    subjectOrderConfirmed: "Siparisiniz Alindi",
+  },
+  en: {
+    newOrder: "NEW ORDER",
+    customerInfo: "Customer Information",
+    fullName: "Full Name",
+    phone: "Phone",
+    address: "Address",
+    orderDetails: "Order Details",
+    product: "Product",
+    size: "Size",
+    color: "Color",
+    quantity: "Qty",
+    price: "Price",
+    total: "Total",
+    orderConfirmed: "Your Order Has Been Received!",
+    dear: "Dear",
+    orderConfirmedMessage:
+      "Your order has been successfully received. You can find your order details below.",
+    subjectNewOrder: "New Order",
+    subjectOrderConfirmed: "Your Order Has Been Received",
+  },
+  ru: {
+    newOrder: "НОВЫЙ ЗАКАЗ",
+    customerInfo: "Информация о клиенте",
+    fullName: "Имя Фамилия",
+    phone: "Телефон",
+    address: "Адрес",
+    orderDetails: "Детали заказа",
+    product: "Товар",
+    size: "Размер",
+    color: "Цвет",
+    quantity: "Кол-во",
+    price: "Цена",
+    total: "Итого",
+    orderConfirmed: "Ваш заказ принят!",
+    dear: "Уважаемый(ая)",
+    orderConfirmedMessage:
+      "Ваш заказ успешно принят. Ниже вы найдете детали вашего заказа.",
+    subjectNewOrder: "Новый заказ",
+    subjectOrderConfirmed: "Ваш заказ принят",
+  },
+};
+
+const localeMap: Record<string, string> = {
+  tr: "tr-TR",
+  en: "en-US",
+  ru: "ru-RU",
+};
+
+function getT(lang: string): Record<string, string> {
+  return emailTranslations[lang] || emailTranslations["tr"];
+}
+
 function parsePrice(priceStr: string): number {
   return parseFloat(priceStr.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
 }
 
-function formatDate(date: Date): string {
-  return date.toLocaleDateString("tr-TR", {
+function formatDate(date: Date, lang: string): string {
+  return date.toLocaleDateString(localeMap[lang] || "tr-TR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -44,7 +118,10 @@ function buildOrderEmailHtml(
   order: OrderWithItems,
   siteName: string,
   siteLogo: string | null,
+  lang: string,
 ): string {
+  const t = getT(lang);
+  const locale = localeMap[lang] || "tr-TR";
   const totalAmount = order.items.reduce(
     (sum, item) => sum + parsePrice(item.price) * item.quantity,
     0,
@@ -62,7 +139,7 @@ function buildOrderEmailHtml(
           ${item.sizeRange}
         </td>
         <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center;">
-          ${item.color || "—"}
+          ${item.color || "\u2014"}
         </td>
         <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center;">
           ${item.quantity}
@@ -89,7 +166,7 @@ function buildOrderEmailHtml(
     <div style="background-color: #ffffff; border-radius: 12px 12px 0 0; padding: 32px; text-align: center; border-bottom: 3px solid #111;">
       ${logoHtml}
       <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #111; letter-spacing: 0.5px;">
-        YENI SIPARIS
+        ${t.newOrder}
       </h2>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: #888; font-family: monospace;">
         #${order.orderNumber}
@@ -99,19 +176,19 @@ function buildOrderEmailHtml(
     <!-- Musteri Bilgileri -->
     <div style="background-color: #ffffff; padding: 24px 32px; border-bottom: 1px solid #f0f0f0;">
       <h3 style="margin: 0 0 16px 0; font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px;">
-        Musteri Bilgileri
+        ${t.customerInfo}
       </h3>
       <table style="width: 100%; font-size: 14px; color: #333;">
         <tr>
-          <td style="padding: 4px 0; color: #888; width: 120px;">Ad Soyad</td>
+          <td style="padding: 4px 0; color: #888; width: 120px;">${t.fullName}</td>
           <td style="padding: 4px 0; font-weight: 600;">${order.firstName} ${order.lastName}</td>
         </tr>
         <tr>
-          <td style="padding: 4px 0; color: #888;">Telefon</td>
+          <td style="padding: 4px 0; color: #888;">${t.phone}</td>
           <td style="padding: 4px 0; font-weight: 600;">${order.phone}</td>
         </tr>
         <tr>
-          <td style="padding: 4px 0; color: #888;">Adres</td>
+          <td style="padding: 4px 0; color: #888;">${t.address}</td>
           <td style="padding: 4px 0; font-weight: 600;">${order.address}</td>
         </tr>
       </table>
@@ -120,16 +197,16 @@ function buildOrderEmailHtml(
     <!-- Urunler -->
     <div style="background-color: #ffffff; padding: 24px 32px;">
       <h3 style="margin: 0 0 16px 0; font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px;">
-        Siparis Detaylari
+        ${t.orderDetails}
       </h3>
       <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
         <thead>
           <tr style="border-bottom: 2px solid #111;">
-            <th style="padding: 8px 16px; text-align: left; font-weight: 600; color: #555;">Urun</th>
-            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">Beden</th>
-            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">Renk</th>
-            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">Adet</th>
-            <th style="padding: 8px 16px; text-align: right; font-weight: 600; color: #555;">Fiyat</th>
+            <th style="padding: 8px 16px; text-align: left; font-weight: 600; color: #555;">${t.product}</th>
+            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">${t.size}</th>
+            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">${t.color}</th>
+            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">${t.quantity}</th>
+            <th style="padding: 8px 16px; text-align: right; font-weight: 600; color: #555;">${t.price}</th>
           </tr>
         </thead>
         <tbody>
@@ -140,16 +217,16 @@ function buildOrderEmailHtml(
 
     <!-- Toplam -->
     <div style="background-color: #111; border-radius: 0 0 12px 12px; padding: 24px 32px; text-align: right;">
-      <span style="color: #888; font-size: 14px; margin-right: 16px;">Toplam</span>
+      <span style="color: #888; font-size: 14px; margin-right: 16px;">${t.total}</span>
       <span style="color: #fff; font-size: 24px; font-weight: 700;">
-        ${totalAmount.toLocaleString("tr-TR")} $
+        ${totalAmount.toLocaleString(locale)} $
       </span>
     </div>
 
     <!-- Footer -->
     <div style="text-align: center; padding: 24px 0;">
       <p style="margin: 0; font-size: 12px; color: #aaa;">
-        ${formatDate(order.createdAt)} &bull; ${siteName}
+        ${formatDate(order.createdAt, lang)} &bull; ${siteName}
       </p>
     </div>
   </div>
@@ -159,11 +236,14 @@ function buildOrderEmailHtml(
 
 export async function sendOrderNotification(
   order: OrderWithItems,
+  lang: string = "tr",
 ): Promise<void> {
   if (!config.RESEND_API_KEY) {
     console.log("RESEND_API_KEY tanimli degil, email gonderilmedi");
     return;
   }
+
+  const t = getT(lang);
 
   // Settings'ten bildirim emaili ve site bilgilerini al
   const settings = await prisma.settings.findMany({
@@ -195,12 +275,12 @@ export async function sendOrderNotification(
   const siteLogo = settingsMap["site_logo"] || null;
 
   const resend = new Resend(config.RESEND_API_KEY);
-  const html = buildOrderEmailHtml(order, siteName, siteLogo);
+  const html = buildOrderEmailHtml(order, siteName, siteLogo, lang);
 
   const { error } = await resend.emails.send({
     from: `${siteName} <${config.RESEND_FROM_EMAIL}>`,
     to: recipients,
-    subject: `Yeni Siparis — #${order.orderNumber}`,
+    subject: `${t.subjectNewOrder} \u2014 #${order.orderNumber}`,
     html,
   });
 
@@ -208,7 +288,7 @@ export async function sendOrderNotification(
     console.error("Resend email hatasi:", error);
   } else {
     console.log(
-      `Siparis bildirimi gonderildi: ${order.orderNumber} → ${recipients.join(", ")}`,
+      `Siparis bildirimi gonderildi: ${order.orderNumber} \u2192 ${recipients.join(", ")}`,
     );
   }
 }
@@ -217,7 +297,10 @@ function buildCustomerConfirmationHtml(
   order: OrderWithItems,
   siteName: string,
   siteLogo: string | null,
+  lang: string,
 ): string {
+  const t = getT(lang);
+  const locale = localeMap[lang] || "tr-TR";
   const totalAmount = order.items.reduce(
     (sum, item) => sum + parsePrice(item.price) * item.quantity,
     0,
@@ -256,7 +339,7 @@ function buildCustomerConfirmationHtml(
     <div style="background-color: #ffffff; border-radius: 12px 12px 0 0; padding: 32px; text-align: center; border-bottom: 2px solid #111;">
       ${logoHtml}
       <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #111;">
-        Siparisiniz Alindi!
+        ${t.orderConfirmed}
       </h2>
       <p style="margin: 8px 0 0 0; font-size: 13px; color: #888; font-family: monospace;">
         #${order.orderNumber}
@@ -266,8 +349,8 @@ function buildCustomerConfirmationHtml(
     <!-- Mesaj -->
     <div style="background-color: #ffffff; padding: 24px 32px; border-bottom: 1px solid #f0f0f0;">
       <p style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;">
-        Sayin ${order.firstName} ${order.lastName},<br/>
-        Siparisiniz basariyla alindi. Asagida siparis detaylarinizi bulabilirsiniz.
+        ${t.dear} ${order.firstName} ${order.lastName},<br/>
+        ${t.orderConfirmedMessage}
       </p>
     </div>
 
@@ -276,9 +359,9 @@ function buildCustomerConfirmationHtml(
       <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
         <thead>
           <tr style="border-bottom: 2px solid #eee;">
-            <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">Urun</th>
-            <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">Adet</th>
-            <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">Fiyat</th>
+            <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">${t.product}</th>
+            <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">${t.quantity}</th>
+            <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">${t.price}</th>
           </tr>
         </thead>
         <tbody>
@@ -289,16 +372,16 @@ function buildCustomerConfirmationHtml(
 
     <!-- Toplam -->
     <div style="background-color: #111; border-radius: 0 0 12px 12px; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #888; font-size: 14px;">Toplam</span>
+      <span style="color: #888; font-size: 14px;">${t.total}</span>
       <span style="color: #fff; font-size: 22px; font-weight: 700; float: right;">
-        ${totalAmount.toLocaleString("tr-TR")} $
+        ${totalAmount.toLocaleString(locale)} $
       </span>
     </div>
 
     <!-- Footer -->
     <div style="text-align: center; padding: 20px 0;">
       <p style="margin: 0; font-size: 11px; color: #aaa;">
-        ${siteName} &bull; ${formatDate(order.createdAt)}
+        ${siteName} &bull; ${formatDate(order.createdAt, lang)}
       </p>
     </div>
   </div>
@@ -308,10 +391,13 @@ function buildCustomerConfirmationHtml(
 
 export async function sendCustomerConfirmation(
   order: OrderWithItems,
+  lang: string = "tr",
 ): Promise<void> {
   if (!config.RESEND_API_KEY || !order.email) {
     return;
   }
+
+  const t = getT(lang);
 
   const settings = await prisma.settings.findMany({
     where: {
@@ -324,12 +410,12 @@ export async function sendCustomerConfirmation(
   const siteLogo = settingsMap["site_logo"] || null;
 
   const resend = new Resend(config.RESEND_API_KEY);
-  const html = buildCustomerConfirmationHtml(order, siteName, siteLogo);
+  const html = buildCustomerConfirmationHtml(order, siteName, siteLogo, lang);
 
   const { error } = await resend.emails.send({
     from: `${siteName} <${config.RESEND_FROM_EMAIL}>`,
     to: order.email,
-    subject: `Siparisiniz Alindi — #${order.orderNumber}`,
+    subject: `${t.subjectOrderConfirmed} \u2014 #${order.orderNumber}`,
     html,
   });
 
@@ -337,7 +423,7 @@ export async function sendCustomerConfirmation(
     console.error("Musteri onay emaili hatasi:", error);
   } else {
     console.log(
-      `Musteri onay emaili gonderildi: ${order.orderNumber} → ${order.email}`,
+      `Musteri onay emaili gonderildi: ${order.orderNumber} \u2192 ${order.email}`,
     );
   }
 }

@@ -2,16 +2,23 @@ import { useNavigate, useParams } from "react-router";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCart, getCartKey } from "../../../contexts/CartContext";
+import { useI18n } from "../../../contexts/I18nContext";
 import { useCurrency } from "../../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
+
+const localeMap: Record<string, string> = {
+  tr: "tr-TR",
+  en: "en-US",
+  ru: "ru-RU",
+};
 
 function parsePrice(priceStr: string): number {
   const cleaned = priceStr.replace(/[^0-9.,]/g, "").replace(",", ".");
   return parseFloat(cleaned) || 0;
 }
 
-function formatPrice(amount: number): string {
-  return amount.toLocaleString("tr-TR", {
+function formatPrice(amount: number, lang: string): string {
+  return amount.toLocaleString(localeMap[lang] || "tr-TR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
@@ -28,6 +35,7 @@ export function CartSidebar() {
     closeCart,
     itemCount,
   } = useCart();
+  const { t, language } = useI18n();
   const currency = useCurrency();
 
   const subtotal = items.reduce((sum, item) => {
@@ -65,7 +73,7 @@ export function CartSidebar() {
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <h2 className="text-lg font-medium text-black">
-                Sepetiniz
+                {t("cart.title")}
                 <span className="text-gray-400 text-sm font-light ml-2">
                   ({itemCount})
                 </span>
@@ -84,9 +92,11 @@ export function CartSidebar() {
                 <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                   <ShoppingBag className="w-8 h-8 text-gray-300" />
                 </div>
-                <p className="text-gray-400 font-light mb-1">Sepetiniz bos</p>
+                <p className="text-gray-400 font-light mb-1">
+                  {t("cart.empty")}
+                </p>
                 <p className="text-sm text-gray-300 font-light">
-                  Urun eklemek icin alisverise baslayin
+                  {t("cart.emptyHint")}
                 </p>
               </div>
             ) : (
@@ -130,11 +140,11 @@ export function CartSidebar() {
                                 {item.product.productCode}
                               </p>
                               <p className="text-xs text-gray-400 font-light">
-                                Beden: {displaySizeRange}
+                                {t("product.size")}: {displaySizeRange}
                               </p>
                               {displayColor && (
                                 <p className="text-xs text-gray-400 font-light">
-                                  Renk: {displayColor}
+                                  {t("product.color")}: {displayColor}
                                 </p>
                               )}
                             </div>
@@ -172,7 +182,7 @@ export function CartSidebar() {
 
                             {/* Price */}
                             <p className="text-sm font-semibold text-black">
-                              {formatPrice(itemTotal)} {currency}
+                              {formatPrice(itemTotal, language)} {currency}
                             </p>
                           </div>
                         </div>
@@ -187,22 +197,24 @@ export function CartSidebar() {
             {items.length > 0 && (
               <div className="border-t border-gray-100 px-5 py-4 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Toplam</span>
+                  <span className="text-sm text-gray-500">
+                    {t("cart.total")}
+                  </span>
                   <span className="text-lg font-bold text-black">
-                    {formatPrice(subtotal)} {currency}
+                    {formatPrice(subtotal, language)} {currency}
                   </span>
                 </div>
                 <button
                   onClick={handleCheckout}
                   className="w-full py-3.5 bg-black text-white uppercase tracking-widest text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors"
                 >
-                  Siparisi Tamamla
+                  {t("cart.checkout")}
                 </button>
                 <button
                   onClick={closeCart}
                   className="w-full py-2.5 text-sm text-gray-500 font-light hover:text-black transition-colors"
                 >
-                  Alisverise Devam Et
+                  {t("cart.continueShopping")}
                 </button>
               </div>
             )}

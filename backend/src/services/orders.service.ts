@@ -11,6 +11,7 @@ interface CreateOrderInput {
   phone: string;
   address: string;
   brandSlug?: string;
+  language?: string;
   items: Array<{
     productId: string;
     productCode: string;
@@ -62,11 +63,13 @@ export async function createOrder(input: CreateOrderInput) {
     },
   });
 
+  const lang = input.language || "tr";
+
   // Fire-and-forget: email hatalari siparis akisini etkilememeli
-  sendOrderNotification(order).catch((err) =>
+  sendOrderNotification(order, lang).catch((err) =>
     console.error("Admin bildirim emaili gonderilemedi:", err),
   );
-  sendCustomerConfirmation(order).catch((err) =>
+  sendCustomerConfirmation(order, lang).catch((err) =>
     console.error("Musteri onay emaili gonderilemedi:", err),
   );
 

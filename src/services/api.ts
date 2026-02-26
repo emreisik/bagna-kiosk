@@ -74,6 +74,7 @@ export interface CreateOrderInput {
   phone: string;
   address: string;
   brandSlug?: string;
+  language?: string;
   items: Array<{
     productId: string;
     productCode: string;

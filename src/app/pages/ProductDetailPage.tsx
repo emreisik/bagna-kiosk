@@ -9,10 +9,17 @@ import {
 } from "lucide-react";
 import { useProduct } from "../../hooks/useProducts";
 import { useCart } from "../../contexts/CartContext";
+import { useI18n } from "../../contexts/I18nContext";
 import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import type { ProductVariant } from "../../data/products";
+
+const localeMap: Record<string, string> = {
+  tr: "tr-TR",
+  en: "en-US",
+  ru: "ru-RU",
+};
 
 export function ProductDetailPage() {
   const { brandSlug, productId } = useParams<{
@@ -21,6 +28,7 @@ export function ProductDetailPage() {
   }>();
   const navigate = useNavigate();
   const { addItem, itemCount, openCart } = useCart();
+  const { t, language } = useI18n();
   const { data: product, isLoading } = useProduct(productId);
   const { data: settings } = useSettings();
   const currency = useCurrency();
@@ -133,7 +141,7 @@ export function ProductDetailPage() {
   // Parse price for display
   const priceNumeric = displayPrice.replace(/[^0-9.,]/g, "").replace(",", ".");
   const priceFormatted = parseFloat(priceNumeric)
-    ? parseFloat(priceNumeric).toLocaleString("tr-TR", {
+    ? parseFloat(priceNumeric).toLocaleString(localeMap[language] || "tr-TR", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       })
@@ -162,12 +170,14 @@ export function ProductDetailPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
-        <p className="text-xl text-gray-400 font-light mb-6">Urun bulunamadi</p>
+        <p className="text-xl text-gray-400 font-light mb-6">
+          {t("product.notFound")}
+        </p>
         <button
           onClick={() => navigate(`/${brandSlug || ""}`)}
           className="px-8 py-3 bg-black text-white uppercase tracking-widest text-sm font-medium rounded-lg"
         >
-          Kataloga Don
+          {t("product.backToCatalog")}
         </button>
       </div>
     );
@@ -185,7 +195,7 @@ export function ProductDetailPage() {
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm font-light uppercase tracking-wide">
-                Geri
+                {t("back")}
               </span>
             </button>
 
@@ -327,7 +337,7 @@ export function ProductDetailPage() {
                 {/* Beden Araligi Secimi */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
-                    Beden Seciniz
+                    {t("product.selectSize")}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableSizeRanges.map((sr) => (
@@ -353,7 +363,7 @@ export function ProductDetailPage() {
                 {selectedSizeRange && availableColors.length > 0 && (
                   <div>
                     <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
-                      Renk Seciniz
+                      {t("product.selectColor")}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {availableColors.map((color) => (
@@ -377,8 +387,8 @@ export function ProductDetailPage() {
                 {!canAddToCart && (
                   <p className="text-xs text-gray-400 font-light">
                     {!selectedSizeRange
-                      ? "Lutfen bir beden secin"
-                      : "Lutfen bir renk secin"}
+                      ? t("product.pleaseSelectSize")
+                      : t("product.pleaseSelectColor")}
                   </p>
                 )}
               </div>
@@ -386,7 +396,7 @@ export function ProductDetailPage() {
               /* Varyant yoksa mevcut beden araligini goster */
               <div className="mb-8">
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-[0.15em] mb-3">
-                  Beden
+                  {t("product.size")}
                 </label>
                 <div className="inline-block px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
                   {displaySizeRange}
@@ -409,12 +419,12 @@ export function ProductDetailPage() {
               {addedToCart ? (
                 <>
                   <Check className="w-4 h-4" />
-                  Sepete Eklendi
+                  {t("product.addedToCart")}
                 </>
               ) : (
                 <>
                   <ShoppingBag className="w-4 h-4" />
-                  Sepete Ekle
+                  {t("product.addToCart")}
                 </>
               )}
             </button>
