@@ -8,14 +8,13 @@ import {
   NotificationType,
 } from "../components/admin/NotificationModal";
 
-// Gorseli WebP formatina donustur ve sıkistir
-function compressToWebP(
-  file: File,
-  maxWidth = 1600,
-  quality = 0.82,
-): Promise<File> {
+// Gorseli sikistir: once WebP dene, basarisizsa JPEG dene
+function compressImage(file: File): Promise<File> {
+  const MAX_WIDTH = 1200;
+  const WEBP_QUALITY = 0.7;
+  const JPEG_QUALITY = 0.75;
+
   return new Promise((resolve) => {
-    // Zaten kucuk dosyalari daha agresif sıkıstırma
     const img = new Image();
     const url = URL.createObjectURL(file);
 
@@ -23,65 +22,100 @@ function compressToWebP(
       URL.revokeObjectURL(url);
 
       let { width, height } = img;
-
-      // maxWidth'den buyukse oranli kucult
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
+      if (width > MAX_WIDTH) {
+        height = Math.round((height * MAX_WIDTH) / width);
+        width = MAX_WIDTH;
       }
 
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        resolve(file); // Canvas desteklenmiyorsa original dosyayi don
+        console.warn(
+          `[Compress] ${file.name}: Canvas alinamadi, orijinal kullaniliyor`,
+        );
+        resolve(file);
         return;
       }
-
       ctx.drawImage(img, 0, 0, width, height);
 
+      // Once WebP dene
       canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            resolve(file);
+        (webpBlob) => {
+          if (webpBlob && webpBlob.size < file.size) {
+            const kb = (webpBlob.size / 1024).toFixed(0);
+            const origKb = (file.size / 1024).toFixed(0);
+            console.log(
+              `[Compress] ${file.name}: ${origKb}KB -> ${kb}KB (WebP)`,
+            );
+            const webpFile = new File(
+              [webpBlob],
+              file.name.replace(/\.[^.]+$/, ".webp"),
+              { type: "image/webp" },
+            );
+            resolve(webpFile);
             return;
           }
 
-          // Orijinal dosyadan buyukse orijinali kullan
-          if (blob.size >= file.size) {
-            resolve(file);
-            return;
-          }
+          // WebP basarisizsa JPEG dene
+          canvas.toBlob(
+            (jpegBlob) => {
+              if (jpegBlob && jpegBlob.size < file.size) {
+                const kb = (jpegBlob.size / 1024).toFixed(0);
+                const origKb = (file.size / 1024).toFixed(0);
+                console.log(
+                  `[Compress] ${file.name}: ${origKb}KB -> ${kb}KB (JPEG fallback)`,
+                );
+                const jpegFile = new File(
+                  [jpegBlob],
+                  file.name.replace(/\.[^.]+$/, ".jpg"),
+                  { type: "image/jpeg" },
+                );
+                resolve(jpegFile);
+                return;
+              }
 
-          const webpName = file.name.replace(/\.[^.]+$/, ".webp");
-          const webpFile = new File([blob], webpName, { type: "image/webp" });
-          resolve(webpFile);
+              // Hicbiri kucultmediyse orijinal
+              console.warn(
+                `[Compress] ${file.name}: Sikistirilamadi (${(file.size / 1024).toFixed(0)}KB), orijinal kullaniliyor`,
+              );
+              resolve(file);
+            },
+            "image/jpeg",
+            JPEG_QUALITY,
+          );
         },
         "image/webp",
-        quality,
+        WEBP_QUALITY,
       );
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      resolve(file); // Hata olursa original dosyayi don
+      console.error(
+        `[Compress] ${file.name}: Gorsel yuklenemedi, orijinal kullaniliyor`,
+      );
+      resolve(file);
     };
 
     img.src = url;
   });
 }
 
-// Birden fazla dosyayi paralel donustur
+// Birden fazla dosyayi paralel sikistir
 async function compressBatch(files: File[]): Promise<File[]> {
   const PARALLEL = 4;
   const results: File[] = [];
   const totalBefore = files.reduce((sum, f) => sum + f.size, 0);
 
+  console.log(
+    `[Compress] ${files.length} gorsel sikistiriliyor (toplam ${(totalBefore / 1024 / 1024).toFixed(1)}MB)...`,
+  );
+
   for (let i = 0; i < files.length; i += PARALLEL) {
     const batch = files.slice(i, i + PARALLEL);
-    const compressed = await Promise.all(batch.map((f) => compressToWebP(f)));
+    const compressed = await Promise.all(batch.map((f) => compressImage(f)));
     results.push(...compressed);
   }
 
@@ -90,7 +124,7 @@ async function compressBatch(files: File[]): Promise<File[]> {
   const pct =
     totalBefore > 0 ? Math.round((1 - totalAfter / totalBefore) * 100) : 0;
   console.log(
-    `[WebP] ${files.length} gorsel: ${(totalBefore / 1024 / 1024).toFixed(1)}MB -> ${(totalAfter / 1024 / 1024).toFixed(1)}MB (-%${pct}, ${savedMB}MB tasarruf)`,
+    `[Compress] SONUC: ${(totalBefore / 1024 / 1024).toFixed(1)}MB -> ${(totalAfter / 1024 / 1024).toFixed(1)}MB (-%${pct}, ${savedMB}MB tasarruf)`,
   );
 
   return results;
