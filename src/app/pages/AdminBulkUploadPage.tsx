@@ -77,12 +77,21 @@ function compressToWebP(
 async function compressBatch(files: File[]): Promise<File[]> {
   const PARALLEL = 4;
   const results: File[] = [];
+  const totalBefore = files.reduce((sum, f) => sum + f.size, 0);
 
   for (let i = 0; i < files.length; i += PARALLEL) {
     const batch = files.slice(i, i + PARALLEL);
     const compressed = await Promise.all(batch.map((f) => compressToWebP(f)));
     results.push(...compressed);
   }
+
+  const totalAfter = results.reduce((sum, f) => sum + f.size, 0);
+  const savedMB = ((totalBefore - totalAfter) / 1024 / 1024).toFixed(1);
+  const pct =
+    totalBefore > 0 ? Math.round((1 - totalAfter / totalBefore) * 100) : 0;
+  console.log(
+    `[WebP] ${files.length} gorsel: ${(totalBefore / 1024 / 1024).toFixed(1)}MB -> ${(totalAfter / 1024 / 1024).toFixed(1)}MB (-%${pct}, ${savedMB}MB tasarruf)`,
+  );
 
   return results;
 }
@@ -114,6 +123,7 @@ export function AdminBulkUploadPage() {
   const [uploadProgress, setUploadProgress] = useState({
     current: 0,
     total: 0,
+    phase: "" as "" | "compressing" | "uploading" | "saving",
   });
 
   // Toplu seçim state'leri
@@ -269,6 +279,10 @@ export function AdminBulkUploadPage() {
 
     // 2. Tum barkodlari tek istekte ara (toplu arama)
     const allBarcodes = [...barcodeMap.keys()];
+    console.log(
+      `[Barkod] ${allBarcodes.length} unique barkod bulundu, toplu aranıyor...`,
+    );
+
     let barcodeResults: Record<
       string,
       {
@@ -281,8 +295,12 @@ export function AdminBulkUploadPage() {
 
     try {
       barcodeResults = await apiClient.adminFindByBarcodes(allBarcodes, token);
-    } catch {
-      console.error("Toplu barkod arama basarisiz");
+      const matched = Object.values(barcodeResults).filter(Boolean).length;
+      console.log(
+        `[Barkod] Sonuc: ${matched} eslesti, ${allBarcodes.length - matched} eslesemedi`,
+      );
+    } catch (err) {
+      console.error("Toplu barkod arama basarisiz:", err);
       setNotificationModal({
         isOpen: true,
         type: "error",
@@ -405,18 +423,32 @@ export function AdminBulkUploadPage() {
         errorMessage: undefined,
       });
 
-      // Gorselleri WebP'ye donustur ve sıkistir
+      console.log(
+        `[Upload] ${product.folderName}: ${product.images.length} gorsel, sikistiriliyor...`,
+      );
+
+      // Gorselleri WebP'ye donustur ve sikistir
+      setUploadProgress((prev) => ({ ...prev, phase: "compressing" }));
       const compressedImages = await compressBatch(product.images);
 
-      // Parcalayarak yukle (max 50 per request)
-      const BATCH_SIZE = 50;
+      // Parcalayarak yukle (max 10 per request - Railway timeout onlemi)
+      setUploadProgress((prev) => ({ ...prev, phase: "uploading" }));
+      const BATCH_SIZE = 10;
       const allUploadedUrls: string[] = [];
 
       for (let i = 0; i < compressedImages.length; i += BATCH_SIZE) {
         const batch = compressedImages.slice(i, i + BATCH_SIZE);
+        console.log(
+          `[Upload] ${product.folderName}: batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(compressedImages.length / BATCH_SIZE)} (${batch.length} gorsel)`,
+        );
         const uploadResult = await apiClient.uploadMultipleImages(batch, token);
         allUploadedUrls.push(...uploadResult.images.map((img) => img.url));
       }
+
+      console.log(
+        `[Upload] ${product.folderName}: ${allUploadedUrls.length} gorsel yuklendi, kaydediliyor...`,
+      );
+      setUploadProgress((prev) => ({ ...prev, phase: "saving" }));
 
       if (product.mode === "update") {
         await apiClient.adminAddPhotosToProduct(
@@ -447,15 +479,12 @@ export function AdminBulkUploadPage() {
         );
       }
 
+      console.log(`[Upload] ${product.folderName}: BASARILI`);
       updateProduct(product.id, { uploadStatus: "success" });
       return true;
     } catch (error: any) {
       const errorMessage = error?.message || "Bilinmeyen hata";
-      console.error(
-        `Urun islemi hatasi: ${product.folderName} (${product.mode})`,
-        "\nHata mesaji:",
-        errorMessage,
-      );
+      console.error(`[Upload] ${product.folderName}: HATA -`, errorMessage);
       updateProduct(product.id, { uploadStatus: "error", errorMessage });
       return false;
     }
@@ -483,7 +512,11 @@ export function AdminBulkUploadPage() {
     }
 
     setProcessing(true);
-    setUploadProgress({ current: 0, total: products.length });
+    setUploadProgress({
+      current: 0,
+      total: products.length,
+      phase: "compressing",
+    });
 
     // 3 urun ayni anda paralel yukle
     const CONCURRENCY = 3;
@@ -493,7 +526,11 @@ export function AdminBulkUploadPage() {
       const batch = products.slice(i, i + CONCURRENCY);
       await Promise.all(batch.map((p) => uploadSingleProduct(p)));
       completed += batch.length;
-      setUploadProgress({ current: completed, total: products.length });
+      setUploadProgress({
+        current: completed,
+        total: products.length,
+        phase: "uploading",
+      });
     }
 
     setProcessing(false);
@@ -1072,8 +1109,12 @@ export function AdminBulkUploadPage() {
                 <div>
                   <div className="flex justify-between text-sm text-gray-600 mb-1">
                     <span>
-                      Yukleniyor... {uploadProgress.current}/
-                      {uploadProgress.total} urun
+                      {uploadProgress.phase === "compressing"
+                        ? "Sikistiriliyor..."
+                        : uploadProgress.phase === "saving"
+                          ? "Kaydediliyor..."
+                          : "Yukleniyor..."}{" "}
+                      {uploadProgress.current}/{uploadProgress.total} urun
                     </span>
                     <span>
                       %
