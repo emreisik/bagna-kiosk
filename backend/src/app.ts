@@ -28,8 +28,9 @@ export async function createApp(): Promise<Express> {
                 imgSrc: [
                   "'self'",
                   "data:",
+                  "blob:", // URL.createObjectURL() ile olusturulan preview gorselleri icin
                   "https:",
-                  "http:", // Allow all HTTP sources (includes localhost and local IPs)
+                  "http:",
                 ],
                 connectSrc: ["'self'", "https://api.qrserver.com"], // QR code API için
               },
