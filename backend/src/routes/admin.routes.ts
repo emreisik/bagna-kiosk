@@ -40,6 +40,11 @@ router.get(
   authMiddleware,
   excelImportController.findByBarcodeHandler,
 );
+router.post(
+  "/products/find-by-barcodes",
+  authMiddleware,
+  excelImportController.findByBarcodesHandler,
+);
 
 // Products - Dynamic :id routes
 router.put(
@@ -138,7 +143,7 @@ router.post(
 router.post(
   "/upload/images",
   authMiddleware,
-  upload.array("images", 10), // Max 10 images
+  upload.array("images", 50), // Max 50 images
   uploadController.uploadMultipleImagesHandler,
 );
 

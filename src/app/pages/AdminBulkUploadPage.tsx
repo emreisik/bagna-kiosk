@@ -32,6 +32,10 @@ export function AdminBulkUploadPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({
+    current: 0,
+    total: 0,
+  });
 
   // Toplu seçim state'leri
   const [bulkCategoryId, setBulkCategoryId] = useState("");
@@ -184,28 +188,33 @@ export function AdminBulkUploadPage() {
       barcodeMap.get(barcode)!.push(file);
     }
 
-    // 2. Her unique barkod icin urun ara (cache ile tekrar aramayi onle)
-    const barcodeToProduct = new Map<
+    // 2. Tum barkodlari tek istekte ara (toplu arama)
+    const allBarcodes = [...barcodeMap.keys()];
+    let barcodeResults: Record<
       string,
-      { id: string; productCode: string; title: string; imageCount: number }
-    >();
-    const productCodeCache = new Map<string, string>(); // productCode -> ilk aranan barkod
+      {
+        id: string;
+        productCode: string;
+        title: string;
+        imageCount: number;
+      } | null
+    > = {};
 
-    for (const barcode of barcodeMap.keys()) {
-      try {
-        const result = await apiClient.adminFindByBarcode(barcode, token);
-        if (result.exists && result.product) {
-          barcodeToProduct.set(barcode, result.product);
-          if (!productCodeCache.has(result.product.productCode)) {
-            productCodeCache.set(result.product.productCode, barcode);
-          }
-        }
-      } catch {
-        console.warn(`Barkod arama basarisiz: ${barcode}`);
-      }
+    try {
+      barcodeResults = await apiClient.adminFindByBarcodes(allBarcodes, token);
+    } catch {
+      console.error("Toplu barkod arama basarisiz");
+      setNotificationModal({
+        isOpen: true,
+        type: "error",
+        title: "Barkod Arama Hatasi",
+        message: "Barkod arama sirasinda hata olustu. Lutfen tekrar deneyin.",
+        details: [],
+      });
+      return;
     }
 
-    // 3. Barkodlari urun bazinda grupla (ayni urunun farkli barkodlari)
+    // 3. Barkodlari urun bazinda grupla
     const productPhotoMap = new Map<
       string,
       {
@@ -220,21 +229,18 @@ export function AdminBulkUploadPage() {
     >();
 
     for (const [barcode, photos] of barcodeMap) {
-      const product = barcodeToProduct.get(barcode);
+      const product = barcodeResults[barcode];
       if (!product) continue; // eslesmemis barkod
 
       if (!productPhotoMap.has(product.productCode)) {
         productPhotoMap.set(product.productCode, { product, images: [] });
       }
-      // Fotograflari dosya adina gore sirala
       const sorted = [...photos].sort((a, b) => a.name.localeCompare(b.name));
       productPhotoMap.get(product.productCode)!.images.push(...sorted);
     }
 
     // 4. Eslesmemis barkodlari kontrol et
-    const unmatchedBarcodes = [...barcodeMap.keys()].filter(
-      (b) => !barcodeToProduct.has(b),
-    );
+    const unmatchedBarcodes = allBarcodes.filter((b) => !barcodeResults[b]);
 
     if (unmatchedBarcodes.length > 0) {
       console.warn("Eslesmemis barkodlar:", unmatchedBarcodes);
@@ -312,6 +318,67 @@ export function AdminBulkUploadPage() {
 
   const bulkCategory = categories.find((c) => c.id === bulkCategoryId);
 
+  // Tek urun icin upload islemi
+  const uploadSingleProduct = async (product: ProductDraft) => {
+    try {
+      updateProduct(product.id, {
+        uploadStatus: "uploading",
+        errorMessage: undefined,
+      });
+
+      // Cok fazla gorsel varsa parcalayarak yukle (max 50 per request)
+      const BATCH_SIZE = 50;
+      const allUploadedUrls: string[] = [];
+
+      for (let i = 0; i < product.images.length; i += BATCH_SIZE) {
+        const batch = product.images.slice(i, i + BATCH_SIZE);
+        const uploadResult = await apiClient.uploadMultipleImages(batch, token);
+        allUploadedUrls.push(...uploadResult.images.map((img) => img.url));
+      }
+
+      if (product.mode === "update") {
+        await apiClient.adminAddPhotosToProduct(
+          product.folderName,
+          allUploadedUrls,
+          true,
+          token,
+        );
+      } else {
+        await apiClient.adminCreateProduct(
+          {
+            title: product.folderName,
+            productCode: product.folderName,
+            shortDesc: product.folderName,
+            mainImageUrl: allUploadedUrls[0],
+            categoryId: product.categoryId,
+            subcategoryId: product.subcategoryId || undefined,
+            brandId: product.brandId || undefined,
+            sizeRange: product.sizeRange,
+            price: product.price,
+            status: product.status,
+            images: allUploadedUrls.slice(1).map((url, index) => ({
+              imageUrl: url,
+              displayOrder: index,
+            })),
+          } as any,
+          token,
+        );
+      }
+
+      updateProduct(product.id, { uploadStatus: "success" });
+      return true;
+    } catch (error: any) {
+      const errorMessage = error?.message || "Bilinmeyen hata";
+      console.error(
+        `Urun islemi hatasi: ${product.folderName} (${product.mode})`,
+        "\nHata mesaji:",
+        errorMessage,
+      );
+      updateProduct(product.id, { uploadStatus: "error", errorMessage });
+      return false;
+    }
+  };
+
   const handleSubmitAll = async () => {
     // Validation: Sadece yeni ürünler için zorunlu alanları kontrol et
     const newProducts = products.filter((p) => p.mode === "create");
@@ -334,113 +401,63 @@ export function AdminBulkUploadPage() {
     }
 
     setProcessing(true);
+    setUploadProgress({ current: 0, total: products.length });
 
-    for (const product of products) {
-      try {
-        updateProduct(product.id, {
-          uploadStatus: "uploading",
-          errorMessage: undefined,
-        });
+    // 3 urun ayni anda paralel yukle
+    const CONCURRENCY = 3;
+    let completed = 0;
 
-        // 1. Görselleri toplu yükle
-        const uploadResult = await apiClient.uploadMultipleImages(
-          product.images,
-          token,
-        );
-        const uploadedUrls = uploadResult.images.map((img) => img.url);
-
-        if (product.mode === "update") {
-          // Mevcut ürüne fotoğraf ekle
-          await apiClient.adminAddPhotosToProduct(
-            product.folderName,
-            uploadedUrls,
-            true, // Mevcut placeholder görselleri değiştir
-            token,
-          );
-        } else {
-          // 2. Yeni ürün oluştur
-          await apiClient.adminCreateProduct(
-            {
-              title: product.folderName,
-              productCode: product.folderName,
-              shortDesc: product.folderName,
-              mainImageUrl: uploadedUrls[0],
-              categoryId: product.categoryId,
-              subcategoryId: product.subcategoryId || undefined,
-              brandId: product.brandId || undefined,
-              sizeRange: product.sizeRange,
-              price: product.price,
-              status: product.status,
-              images: uploadedUrls.slice(1).map((url, index) => ({
-                imageUrl: url,
-                displayOrder: index,
-              })),
-            } as any,
-            token,
-          );
-        }
-
-        updateProduct(product.id, { uploadStatus: "success" });
-      } catch (error: any) {
-        const errorMessage = error?.message || "Bilinmeyen hata";
-        console.error(
-          `Ürün işlemi hatası: ${product.folderName} (${product.mode})`,
-          "\nHata mesajı:",
-          errorMessage,
-        );
-        updateProduct(product.id, { uploadStatus: "error", errorMessage });
-      }
+    for (let i = 0; i < products.length; i += CONCURRENCY) {
+      const batch = products.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map((p) => uploadSingleProduct(p)));
+      completed += batch.length;
+      setUploadProgress({ current: completed, total: products.length });
     }
 
     setProcessing(false);
 
-    // Başarıyla tamamlananları kontrol et
-    const successProducts = products.filter(
-      (p) => p.uploadStatus === "success",
-    );
-    const errorProducts = products.filter((p) => p.uploadStatus === "error");
-    const successCount = successProducts.length;
-    const errorCount = errorProducts.length;
+    // Sonuclari products state'inden oku (guncel deger icin)
+    setProducts((prev) => {
+      const successCount = prev.filter(
+        (p) => p.uploadStatus === "success",
+      ).length;
+      const errorProducts = prev.filter((p) => p.uploadStatus === "error");
+      const errorCount = errorProducts.length;
 
-    if (successCount === 0) {
-      // Hiçbir ürün eklenemedi
-      setNotificationModal({
-        isOpen: true,
-        type: "error",
-        title: "İşlem Başarısız",
-        message: `Hiçbir ürün eklenemedi!\n\nTüm ürünlerde hata oluştu (${errorCount} hata).`,
-        details: errorProducts.map(
-          (p) => `${p.folderName}: ${p.errorMessage || "Bilinmeyen hata"}`,
-        ),
-      });
-    } else if (errorCount > 0) {
-      // Bazı ürünler başarılı, bazıları hatalı
-      setNotificationModal({
-        isOpen: true,
-        type: "warning",
-        title: "Kısmi Başarı",
-        message: `${successCount} ürün başarıyla eklendi\n${errorCount} ürün eklenemedi\n\nBaşarılı ürünleri görmek için ürün listesine yönlendiriliyorsunuz...`,
-        details: errorProducts.map(
-          (p) => `${p.folderName}: ${p.errorMessage || "Bilinmeyen hata"}`,
-        ),
-      });
-      // 3 saniye bekle, sonra ürün listesine git
-      setTimeout(() => {
-        navigate("/admin/products");
-      }, 3000);
-    } else {
-      // Tüm ürünler başarılı
-      setNotificationModal({
-        isOpen: true,
-        type: "success",
-        title: "Başarılı!",
-        message: `Tüm ürünler başarıyla eklendi (${successCount} ürün).\n\nÜrün listesine yönlendiriliyorsunuz...`,
-        details: [],
-      });
-      setTimeout(() => {
-        navigate("/admin/products");
-      }, 2000);
-    }
+      if (successCount === 0) {
+        setNotificationModal({
+          isOpen: true,
+          type: "error",
+          title: "Islem Basarisiz",
+          message: `Hicbir urun eklenemedi!\n\nTum urunlerde hata olustu (${errorCount} hata).`,
+          details: errorProducts.map(
+            (p) => `${p.folderName}: ${p.errorMessage || "Bilinmeyen hata"}`,
+          ),
+        });
+      } else if (errorCount > 0) {
+        setNotificationModal({
+          isOpen: true,
+          type: "warning",
+          title: "Kismi Basari",
+          message: `${successCount} urun basariyla eklendi\n${errorCount} urun eklenemedi`,
+          details: errorProducts.map(
+            (p) => `${p.folderName}: ${p.errorMessage || "Bilinmeyen hata"}`,
+          ),
+        });
+        setTimeout(() => navigate("/admin/products"), 3000);
+      } else {
+        setNotificationModal({
+          isOpen: true,
+          type: "success",
+          title: "Basarili!",
+          message: `Tum urunler basariyla eklendi (${successCount} urun).\n\nUrun listesine yonlendiriliyorsunuz...`,
+          details: [],
+        });
+        setTimeout(() => navigate("/admin/products"), 2000);
+      }
+
+      return prev;
+    });
   };
 
   const getSelectedCategory = (categoryId: string) => {
@@ -967,31 +984,58 @@ export function AdminBulkUploadPage() {
             })}
 
             {/* Alt Butonlar */}
-            <div className="flex gap-4 sticky bottom-4 bg-white p-4 rounded-lg shadow-lg border">
-              <button
-                onClick={() => setProducts([])}
-                disabled={processing}
-                className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                İptal Et
-              </button>
-              <button
-                onClick={handleSubmitAll}
-                disabled={processing}
-                className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {processing ? (
-                  <>
-                    <Upload className="w-5 h-5 animate-spin" />
-                    Yükleniyor...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5" />
-                    Tümünü Kaydet ({products.length} Ürün)
-                  </>
-                )}
-              </button>
+            <div className="sticky bottom-4 bg-white p-4 rounded-lg shadow-lg border space-y-3">
+              {/* Progress Bar */}
+              {processing && uploadProgress.total > 0 && (
+                <div>
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>
+                      Yukleniyor... {uploadProgress.current}/
+                      {uploadProgress.total} urun
+                    </span>
+                    <span>
+                      %
+                      {Math.round(
+                        (uploadProgress.current / uploadProgress.total) * 100,
+                      )}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-black h-2.5 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setProducts([])}
+                  disabled={processing}
+                  className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Iptal Et
+                </button>
+                <button
+                  onClick={handleSubmitAll}
+                  disabled={processing}
+                  className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {processing ? (
+                    <>
+                      <Upload className="w-5 h-5 animate-spin" />
+                      Yukleniyor...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5" />
+                      Tumunu Kaydet ({products.length} Urun)
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -337,6 +337,47 @@ export async function findProductByBarcode(barcode: string) {
   });
 }
 
+// Toplu barkod arama - tek istekte birden fazla barkod
+export async function findProductsByBarcodes(barcodes: string[]) {
+  const products = await prisma.product.findMany({
+    where: {
+      barcodes: { hasSome: barcodes },
+    },
+    select: {
+      id: true,
+      productCode: true,
+      title: true,
+      barcodes: true,
+      images: { select: { id: true }, orderBy: { displayOrder: "asc" } },
+    },
+  });
+
+  // Her barkod icin hangi urune ait oldugunu maple
+  const result: Record<
+    string,
+    {
+      id: string;
+      productCode: string;
+      title: string;
+      imageCount: number;
+    } | null
+  > = {};
+
+  for (const barcode of barcodes) {
+    const product = products.find((p) => p.barcodes.includes(barcode));
+    result[barcode] = product
+      ? {
+          id: product.id,
+          productCode: product.productCode,
+          title: product.title,
+          imageCount: product.images.length,
+        }
+      : null;
+  }
+
+  return result;
+}
+
 // Mevcut urune fotograf ekle
 export async function addImagesToProduct(
   productId: string,

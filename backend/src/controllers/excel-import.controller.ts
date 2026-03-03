@@ -131,6 +131,31 @@ export async function findByBarcodeHandler(req: AuthRequest, res: Response) {
   }
 }
 
+// Toplu barkod arama - tek istekte birden fazla barkod
+export async function findByBarcodesHandler(req: AuthRequest, res: Response) {
+  try {
+    const adminId = req.adminId;
+    if (!adminId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { barcodes } = req.body;
+    if (!barcodes || !Array.isArray(barcodes) || barcodes.length === 0) {
+      res.status(400).json({ message: "barcodes dizisi gerekli" });
+      return;
+    }
+
+    const result = await excelImportService.findProductsByBarcodes(barcodes);
+    res.json(result);
+  } catch (error: any) {
+    console.error("Batch barcode search error:", error);
+    res
+      .status(500)
+      .json({ message: "Toplu barkod arama sirasinda hata olustu" });
+  }
+}
+
 // Urun koduna gore urun varligini kontrol et
 export async function checkProductCodeHandler(req: AuthRequest, res: Response) {
   try {

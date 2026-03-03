@@ -719,6 +719,28 @@ class ApiClient {
       },
     );
   }
+
+  // Toplu barkod arama - tek istekte tum barkodlar
+  async adminFindByBarcodes(
+    barcodes: string[],
+    token: string,
+  ): Promise<
+    Record<
+      string,
+      {
+        id: string;
+        productCode: string;
+        title: string;
+        imageCount: number;
+      } | null
+    >
+  > {
+    return this.request("/admin/products/find-by-barcodes", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ barcodes }),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_URL);
