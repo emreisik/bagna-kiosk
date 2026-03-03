@@ -390,7 +390,7 @@ export function AdminProductsPage() {
               className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
             >
               <FileSpreadsheet className="w-5 h-5" />
-              Excel Import
+              CSV Import
             </button>
             <button
               onClick={() => navigate("/admin/products/bulk-upload")}

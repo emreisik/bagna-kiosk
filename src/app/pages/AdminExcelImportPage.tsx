@@ -4,9 +4,7 @@ import { apiClient } from "../../services/api";
 import {
   ArrowLeft,
   FileSpreadsheet,
-  Upload,
   Check,
-  X,
   AlertCircle,
   Package,
 } from "lucide-react";
@@ -26,7 +24,7 @@ interface ParsedProduct {
   categoryGuess: string;
 }
 
-// Excel'den urun adina gore kategori tahmini
+// Urun adina gore kategori tahmini
 function guessCategory(productName: string): string {
   const upper = productName.toUpperCase();
   if (upper.includes("PANTOLONLU TAKIM")) return "Pantolonlu Takim";
@@ -46,82 +44,114 @@ function guessCategory(productName: string): string {
   return "Diger";
 }
 
-// Excel dosyasini browser'da parse et (SheetJS CDN)
-async function parseExcelFile(file: File): Promise<ParsedProduct[]> {
-  // SheetJS'i CDN'den yukle
-  const XLSX = await import(
-    /* @ts-ignore */
-    "https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs"
-  );
+// CSV satirini parse et (quoted alanlari destekler)
+function parseCsvLine(line: string, delimiter: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
 
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') {
+        current += '"';
+        i++; // escaped quote
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === delimiter) {
+        fields.push(current.trim());
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
+// Delimiter otomatik tespit (virgul veya noktali virgul)
+function detectDelimiter(firstLine: string): string {
+  const semicolonCount = (firstLine.match(/;/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  return semicolonCount > commaCount ? ";" : ",";
+}
+
+// CSV dosyasini browser'da parse et (harici kutuphane gerekmez)
+function parseCsvFile(file: File): Promise<ParsedProduct[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const text = e.target?.result as string;
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
-        if (rows.length < 2) {
-          reject(new Error("Excel dosyasi bos veya gecersiz"));
+        if (lines.length < 2) {
+          reject(new Error("CSV dosyasi bos veya gecersiz"));
           return;
         }
 
-        // Header satiri
-        const headers = rows[0].map((h: any) => String(h).toLowerCase().trim());
+        const delimiter = detectDelimiter(lines[0]);
+        const headers = parseCsvLine(lines[0], delimiter).map((h) =>
+          h.toLowerCase().trim(),
+        );
 
         // Sutun indekslerini bul
         const colMap = {
           productCode: headers.findIndex(
-            (h: string) =>
+            (h) =>
               h.includes("ürün kodu") ||
               h.includes("urun kodu") ||
               h.includes("product code"),
           ),
           productName: headers.findIndex(
-            (h: string) =>
+            (h) =>
               h.includes("ürün adı") ||
               h.includes("urun adi") ||
               h.includes("product name"),
           ),
           colorCode: headers.findIndex(
-            (h: string) => h.includes("renk kodu") || h.includes("color code"),
+            (h) => h.includes("renk kodu") || h.includes("color code"),
           ),
           colorName: headers.findIndex(
-            (h: string) =>
+            (h) =>
               h.includes("renk açıklaması") ||
               h.includes("renk aciklamasi") ||
               h.includes("color"),
           ),
           size: headers.findIndex(
-            (h: string) => h.includes("beden") || h.includes("size"),
+            (h) => h.includes("beden") || h.includes("size"),
           ),
           barcode: headers.findIndex(
-            (h: string) => h.includes("barkod") || h.includes("barcode"),
+            (h) => h.includes("barkod") || h.includes("barcode"),
           ),
           price: headers.findIndex(
-            (h: string) => h.includes("fiyat") || h.includes("price"),
+            (h) => h.includes("fiyat") || h.includes("price"),
           ),
         };
 
         // Urunleri grupla (urun koduna gore)
         const productMap = new Map<string, ParsedProduct>();
 
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
+        for (let i = 1; i < lines.length; i++) {
+          const row = parseCsvLine(lines[i], delimiter);
           if (!row || row.length === 0) continue;
 
-          const code = String(row[colMap.productCode] || "").trim();
+          const code = (row[colMap.productCode] || "").trim();
           if (!code) continue;
 
           if (!productMap.has(code)) {
-            const name = String(row[colMap.productName] || "").trim();
+            const name = (row[colMap.productName] || "").trim();
             productMap.set(code, {
               productCode: code,
               productName: name,
-              price: Number(row[colMap.price]) || 0,
+              price: Number((row[colMap.price] || "").replace(",", ".")) || 0,
               colors: [],
               sizes: [],
               barcodes: [],
@@ -132,19 +162,19 @@ async function parseExcelFile(file: File): Promise<ParsedProduct[]> {
           const product = productMap.get(code)!;
 
           // Renk ekle (tekrarsiz)
-          const colorName = String(row[colMap.colorName] || "").trim();
+          const colorName = (row[colMap.colorName] || "").trim();
           if (colorName && !product.colors.includes(colorName)) {
             product.colors.push(colorName);
           }
 
           // Beden ekle (tekrarsiz)
-          const size = String(row[colMap.size] || "").trim();
+          const size = (row[colMap.size] || "").trim();
           if (size && !product.sizes.includes(size)) {
             product.sizes.push(size);
           }
 
           // Barkod ekle
-          const barcode = String(row[colMap.barcode] || "").trim();
+          const barcode = (row[colMap.barcode] || "").trim();
           if (barcode) {
             product.barcodes.push(barcode);
           }
@@ -156,7 +186,7 @@ async function parseExcelFile(file: File): Promise<ParsedProduct[]> {
       }
     };
     reader.onerror = () => reject(new Error("Dosya okunamadi"));
-    reader.readAsArrayBuffer(file);
+    reader.readAsText(file, "UTF-8");
   });
 }
 
@@ -213,14 +243,14 @@ export function AdminExcelImportPage() {
       setFileName(file.name);
 
       try {
-        const parsed = await parseExcelFile(file);
+        const parsed = await parseCsvFile(file);
         setProducts(parsed);
       } catch (error: any) {
         setNotificationModal({
           isOpen: true,
           type: "error",
           title: "Parse Hatasi",
-          message: error.message || "Excel dosyasi okunamadi",
+          message: error.message || "CSV dosyasi okunamadi",
           details: [],
         });
       } finally {
@@ -318,10 +348,10 @@ export function AdminExcelImportPage() {
             Urunlere Don
           </button>
           <h1 className="text-3xl font-bold text-gray-900">
-            Excel'den Urun Aktar
+            CSV'den Urun Aktar
           </h1>
           <p className="text-gray-600 mt-2">
-            Barkodlu urun listesini (Excel) yukleyerek toplu urun olusturun
+            Barkodlu urun listesini (CSV) yukleyerek toplu urun olusturun
           </p>
         </div>
 
@@ -333,7 +363,7 @@ export function AdminExcelImportPage() {
                 <>
                   <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    Excel Okunuyor...
+                    CSV Okunuyor...
                   </h3>
                   <p className="text-sm text-gray-600">{fileName}</p>
                 </>
@@ -341,10 +371,10 @@ export function AdminExcelImportPage() {
                 <>
                   <FileSpreadsheet className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    Excel Dosyasi Secin
+                    CSV Dosyasi Secin
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
-                    Barkodlu urun listesini (.xlsx) yukleyin
+                    Barkodlu urun listesini (.csv) yukleyin
                   </p>
                   <p className="text-xs text-gray-400 mb-6">
                     Beklenen sutunlar: Urun Kodu, Urun Adi, Renk Kodu, Renk
@@ -353,7 +383,7 @@ export function AdminExcelImportPage() {
                   <label className="inline-block cursor-pointer bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800">
                     <input
                       type="file"
-                      accept=".xlsx,.xls"
+                      accept=".csv"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -373,7 +403,7 @@ export function AdminExcelImportPage() {
               <div className="flex items-center gap-2 mb-2">
                 <Check className="w-5 h-5 text-green-600" />
                 <h3 className="font-semibold text-green-800">
-                  Excel Basariyla Okundu
+                  CSV Basariyla Okundu
                 </h3>
               </div>
               <div className="grid grid-cols-4 gap-4 text-sm text-green-700">
