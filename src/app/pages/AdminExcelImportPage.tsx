@@ -105,10 +105,12 @@ function parseCsvLine(line: string, delimiter: string): string[] {
   return fields;
 }
 
-// Delimiter otomatik tespit (virgul veya noktali virgul)
+// Delimiter otomatik tespit (tab, noktali virgul veya virgul)
 function detectDelimiter(firstLine: string): string {
+  const tabCount = (firstLine.match(/\t/g) || []).length;
   const semicolonCount = (firstLine.match(/;/g) || []).length;
   const commaCount = (firstLine.match(/,/g) || []).length;
+  if (tabCount > semicolonCount && tabCount > commaCount) return "\t";
   return semicolonCount > commaCount ? ";" : ",";
 }
 
@@ -126,27 +128,39 @@ function parseCsvFile(file: File): Promise<ParsedProduct[]> {
           return;
         }
 
-        const delimiter = detectDelimiter(lines[0]);
-        // BOM karakterini temizle + Turkce normalize et
-        const rawHeaders = parseCsvLine(
-          lines[0].replace(/^\uFEFF/, ""),
-          delimiter,
-        );
+        const cleanFirst = lines[0].replace(/^\uFEFF/, "");
+        const delimiter = detectDelimiter(cleanFirst);
+        const rawHeaders = parseCsvLine(cleanFirst, delimiter);
         const headers = rawHeaders.map((h) => normalizeTurkish(h.trim()));
+
+        // Debug: tespit edilen header'lari goster
+        console.log("[CSV Import] Delimiter:", JSON.stringify(delimiter));
+        console.log("[CSV Import] Raw headers:", rawHeaders);
+        console.log("[CSV Import] Normalized:", headers);
+        console.log("[CSV Import] Ilk veri satiri:", lines[1]);
 
         // Sutun indekslerini bul (normalize edilmis headerlar)
         const colMap = {
           productCode: headers.findIndex(
-            (h) => h.includes("urun kodu") || h.includes("product code"),
+            (h) =>
+              h.includes("urun kodu") ||
+              h.includes("stok kodu") ||
+              h.includes("product code"),
           ),
           productName: headers.findIndex(
-            (h) => h.includes("urun adi") || h.includes("product name"),
+            (h) =>
+              h.includes("urun adi") ||
+              h.includes("stok adi") ||
+              h.includes("product name"),
           ),
           colorCode: headers.findIndex(
             (h) => h.includes("renk kodu") || h.includes("color code"),
           ),
           colorName: headers.findIndex(
-            (h) => h.includes("renk aciklamasi") || h.includes("color"),
+            (h) =>
+              h.includes("renk aciklamasi") ||
+              h.includes("renk adi") ||
+              h.includes("color"),
           ),
           size: headers.findIndex(
             (h) => h.includes("beden") || h.includes("size"),
@@ -155,9 +169,23 @@ function parseCsvFile(file: File): Promise<ParsedProduct[]> {
             (h) => h.includes("barkod") || h.includes("barcode"),
           ),
           price: headers.findIndex(
-            (h) => h.includes("fiyat") || h.includes("price"),
+            (h) =>
+              h.includes("fiyat") ||
+              h.includes("price") ||
+              h.includes("tutar") ||
+              h.includes("ucret"),
           ),
         };
+
+        // Fiyat sutunu bulunamadiysa son sutunu dene
+        if (colMap.price === -1) {
+          console.warn(
+            "[CSV Import] Fiyat sutunu bulunamadi, son sutun deneniyor",
+          );
+          colMap.price = headers.length - 1;
+        }
+
+        console.log("[CSV Import] Column map:", colMap);
 
         // Urunleri grupla (urun koduna gore)
         const productMap = new Map<string, ParsedProduct>();
@@ -169,12 +197,19 @@ function parseCsvFile(file: File): Promise<ParsedProduct[]> {
           const code = (row[colMap.productCode] || "").trim();
           if (!code) continue;
 
+          // Fiyat parsing: virgul/nokta/bosluk temizle
+          const rawPrice = (row[colMap.price] || "").trim();
+          const cleanPrice = rawPrice
+            .replace(/[^0-9.,]/g, "")
+            .replace(",", ".");
+          const price = Number(cleanPrice) || 0;
+
           if (!productMap.has(code)) {
             const name = (row[colMap.productName] || "").trim();
             productMap.set(code, {
               productCode: code,
               productName: name,
-              price: Number((row[colMap.price] || "").replace(",", ".")) || 0,
+              price,
               colors: [],
               sizes: [],
               barcodes: [],
