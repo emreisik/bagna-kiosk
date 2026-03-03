@@ -8,6 +8,85 @@ import {
   NotificationType,
 } from "../components/admin/NotificationModal";
 
+// Gorseli WebP formatina donustur ve sıkistir
+function compressToWebP(
+  file: File,
+  maxWidth = 1600,
+  quality = 0.82,
+): Promise<File> {
+  return new Promise((resolve) => {
+    // Zaten kucuk dosyalari daha agresif sıkıstırma
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let { width, height } = img;
+
+      // maxWidth'den buyukse oranli kucult
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file); // Canvas desteklenmiyorsa original dosyayi don
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+
+          // Orijinal dosyadan buyukse orijinali kullan
+          if (blob.size >= file.size) {
+            resolve(file);
+            return;
+          }
+
+          const webpName = file.name.replace(/\.[^.]+$/, ".webp");
+          const webpFile = new File([blob], webpName, { type: "image/webp" });
+          resolve(webpFile);
+        },
+        "image/webp",
+        quality,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file); // Hata olursa original dosyayi don
+    };
+
+    img.src = url;
+  });
+}
+
+// Birden fazla dosyayi paralel donustur
+async function compressBatch(files: File[]): Promise<File[]> {
+  const PARALLEL = 4;
+  const results: File[] = [];
+
+  for (let i = 0; i < files.length; i += PARALLEL) {
+    const batch = files.slice(i, i + PARALLEL);
+    const compressed = await Promise.all(batch.map((f) => compressToWebP(f)));
+    results.push(...compressed);
+  }
+
+  return results;
+}
+
 interface ProductDraft {
   id: string;
   folderName: string; // Ürün kodu olacak
@@ -326,12 +405,15 @@ export function AdminBulkUploadPage() {
         errorMessage: undefined,
       });
 
-      // Cok fazla gorsel varsa parcalayarak yukle (max 50 per request)
+      // Gorselleri WebP'ye donustur ve sıkistir
+      const compressedImages = await compressBatch(product.images);
+
+      // Parcalayarak yukle (max 50 per request)
       const BATCH_SIZE = 50;
       const allUploadedUrls: string[] = [];
 
-      for (let i = 0; i < product.images.length; i += BATCH_SIZE) {
-        const batch = product.images.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < compressedImages.length; i += BATCH_SIZE) {
+        const batch = compressedImages.slice(i, i + BATCH_SIZE);
         const uploadResult = await apiClient.uploadMultipleImages(batch, token);
         allUploadedUrls.push(...uploadResult.images.map((img) => img.url));
       }
