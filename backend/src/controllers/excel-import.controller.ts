@@ -97,6 +97,40 @@ export async function addPhotosToProductHandler(
   }
 }
 
+// Barkod numarasina gore urun bul
+export async function findByBarcodeHandler(req: AuthRequest, res: Response) {
+  try {
+    const adminId = req.adminId;
+    if (!adminId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const barcode = req.query.barcode as string;
+    if (!barcode) {
+      res.status(400).json({ message: "barcode parametresi gerekli" });
+      return;
+    }
+
+    const product = await excelImportService.findProductByBarcode(barcode);
+
+    res.json({
+      exists: !!product,
+      product: product
+        ? {
+            id: product.id,
+            productCode: product.productCode,
+            title: product.title,
+            imageCount: product.images.length,
+          }
+        : null,
+    });
+  } catch (error: any) {
+    console.error("Find by barcode error:", error);
+    res.status(500).json({ message: "Barkod arama sirasinda hata olustu" });
+  }
+}
+
 // Urun koduna gore urun varligini kontrol et
 export async function checkProductCodeHandler(req: AuthRequest, res: Response) {
   try {

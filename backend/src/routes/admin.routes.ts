@@ -35,6 +35,11 @@ router.get(
   authMiddleware,
   excelImportController.checkProductCodeHandler,
 );
+router.get(
+  "/products/find-by-barcode",
+  authMiddleware,
+  excelImportController.findByBarcodeHandler,
+);
 
 // Products - Dynamic :id routes
 router.put(

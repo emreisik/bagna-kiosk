@@ -278,7 +278,7 @@ export async function bulkImportProducts(
           ? nameParts.slice(1).join(" - ").trim()
           : product.productName;
 
-      // Urun olustur
+      // Urun olustur (barkodlarla birlikte)
       await prisma.product.create({
         data: {
           title,
@@ -291,6 +291,7 @@ export async function bulkImportProducts(
           brandId: brandId || null,
           sizeRange,
           price: `${product.price}`,
+          barcodes: product.barcodes || [],
           status,
           variants: {
             create: product.colors.map((color) => ({
@@ -318,6 +319,17 @@ export async function bulkImportProducts(
 export async function findProductByCode(productCode: string) {
   return prisma.product.findFirst({
     where: { productCode },
+    include: {
+      images: { orderBy: { displayOrder: "asc" } },
+      variants: true,
+    },
+  });
+}
+
+// Barkod numarasina gore urun bul
+export async function findProductByBarcode(barcode: string) {
+  return prisma.product.findFirst({
+    where: { barcodes: { has: barcode } },
     include: {
       images: { orderBy: { displayOrder: "asc" } },
       variants: true,

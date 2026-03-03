@@ -44,6 +44,7 @@ model Product {
   brandId       String?        // Brand/Marka
   sizeRange     String
   price         String
+  barcodes      String[]       @default([]) // Urun barkod numaralari (tum varyantlar)
   status        String         @default("pending") // "pending", "approved", "rejected"
   category      Category       @relation(fields: [categoryId], references: [id])
   subcategory   Subcategory?   @relation(fields: [subcategoryId], references: [id])

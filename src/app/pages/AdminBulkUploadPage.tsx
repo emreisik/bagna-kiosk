@@ -90,16 +90,32 @@ export function AdminBulkUploadPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Dosyaları klasör yollarına göre grupla
+    setProcessing(true);
+
+    // Dosya derinligini kontrol et: flat (2 seviye) vs nested (3+ seviye)
+    const hasSubfolders = files.some(
+      (f) => f.webkitRelativePath.split("/").length >= 3,
+    );
+
+    if (hasSubfolders) {
+      // MEVCUT DAVRANIS: Alt klasor bazli (klasor adi = urun kodu)
+      await handleSubfolderMode(files);
+    } else {
+      // YENI: Flat folder + barkod esleme (dosya adi = barkod_sira.jpg)
+      await handleBarcodeMode(files);
+    }
+
+    setProcessing(false);
+  };
+
+  // Alt klasor bazli yukleme (mevcut davranis)
+  const handleSubfolderMode = async (files: File[]) => {
     const folderMap = new Map<string, File[]>();
 
     files.forEach((file) => {
-      // webkitRelativePath: "parentFolder/subFolder/image.jpg"
       const parts = file.webkitRelativePath.split("/");
-
-      // İlk klasörü atla (seçilen ana klasör), ikinci seviye klasör adını al
       if (parts.length >= 3) {
-        const folderName = parts[1]; // Alt klasör adı = ürün kodu
+        const folderName = parts[1];
         if (!folderMap.has(folderName)) {
           folderMap.set(folderName, []);
         }
@@ -107,20 +123,15 @@ export function AdminBulkUploadPage() {
       }
     });
 
-    // Her klasör için mevcut ürün kontrolü yap ve taslak oluştur
     const drafts: ProductDraft[] = [];
 
     for (const [folderName, images] of folderMap) {
-      // Brand-admin için tek marka varsa otomatik seç
       const defaultBrandId =
         !canEditAllBrands && availableBrands.length === 1
           ? availableBrands[0].id
           : "";
-
-      // Status: Brand-admin + requiresApproval=true ise "pending"
       const defaultStatus = canEditStatus ? "approved" : "pending";
 
-      // Mevcut ürün kontrolü
       let mode: "create" | "update" = "create";
       let existingProductId: string | undefined;
       let existingImageCount: number | undefined;
@@ -133,7 +144,7 @@ export function AdminBulkUploadPage() {
           existingImageCount = check.product.imageCount;
         }
       } catch {
-        // Kontrol başarısız olursa yeni ürün olarak devam et
+        // Kontrol basarisiz olursa yeni urun olarak devam et
       }
 
       drafts.push({
@@ -151,6 +162,124 @@ export function AdminBulkUploadPage() {
         mode,
         existingProductId,
         existingImageCount,
+      });
+    }
+
+    setProducts(drafts);
+  };
+
+  // Barkod bazli flat folder yukleme
+  const handleBarcodeMode = async (files: File[]) => {
+    // 1. Dosyalari barkod prefix'ine gore grupla
+    const barcodeMap = new Map<string, File[]>();
+
+    for (const file of files) {
+      const fileName = file.name.replace(/\.[^.]+$/, ""); // uzantiyi cikar
+      const barcode = fileName.split("_")[0]; // 8680699097936_1 -> 8680699097936
+      if (!barcode || barcode.length < 5) continue; // cok kisa barkodlari atla
+
+      if (!barcodeMap.has(barcode)) {
+        barcodeMap.set(barcode, []);
+      }
+      barcodeMap.get(barcode)!.push(file);
+    }
+
+    // 2. Her unique barkod icin urun ara (cache ile tekrar aramayi onle)
+    const barcodeToProduct = new Map<
+      string,
+      { id: string; productCode: string; title: string; imageCount: number }
+    >();
+    const productCodeCache = new Map<string, string>(); // productCode -> ilk aranan barkod
+
+    for (const barcode of barcodeMap.keys()) {
+      try {
+        const result = await apiClient.adminFindByBarcode(barcode, token);
+        if (result.exists && result.product) {
+          barcodeToProduct.set(barcode, result.product);
+          if (!productCodeCache.has(result.product.productCode)) {
+            productCodeCache.set(result.product.productCode, barcode);
+          }
+        }
+      } catch {
+        console.warn(`Barkod arama basarisiz: ${barcode}`);
+      }
+    }
+
+    // 3. Barkodlari urun bazinda grupla (ayni urunun farkli barkodlari)
+    const productPhotoMap = new Map<
+      string,
+      {
+        product: {
+          id: string;
+          productCode: string;
+          title: string;
+          imageCount: number;
+        };
+        images: File[];
+      }
+    >();
+
+    for (const [barcode, photos] of barcodeMap) {
+      const product = barcodeToProduct.get(barcode);
+      if (!product) continue; // eslesmemis barkod
+
+      if (!productPhotoMap.has(product.productCode)) {
+        productPhotoMap.set(product.productCode, { product, images: [] });
+      }
+      // Fotograflari dosya adina gore sirala
+      const sorted = [...photos].sort((a, b) => a.name.localeCompare(b.name));
+      productPhotoMap.get(product.productCode)!.images.push(...sorted);
+    }
+
+    // 4. Eslesmemis barkodlari kontrol et
+    const unmatchedBarcodes = [...barcodeMap.keys()].filter(
+      (b) => !barcodeToProduct.has(b),
+    );
+
+    if (unmatchedBarcodes.length > 0) {
+      console.warn("Eslesmemis barkodlar:", unmatchedBarcodes);
+    }
+
+    // 5. Draft'lari olustur
+    const drafts: ProductDraft[] = [];
+
+    for (const [productCode, { product, images }] of productPhotoMap) {
+      drafts.push({
+        id: Math.random().toString(36).substring(7),
+        folderName: productCode,
+        images,
+        imageUrls: [],
+        categoryId: "",
+        subcategoryId: "",
+        brandId: "",
+        sizeRange: "",
+        price: "",
+        status: "approved",
+        uploadStatus: "waiting",
+        mode: "update",
+        existingProductId: product.id,
+        existingImageCount: product.imageCount,
+      });
+    }
+
+    if (drafts.length === 0 && unmatchedBarcodes.length > 0) {
+      setNotificationModal({
+        isOpen: true,
+        type: "error",
+        title: "Eslestirme Basarisiz",
+        message: `${unmatchedBarcodes.length} barkod icin urun bulunamadi. Once CSV ile urunleri import edin.`,
+        details: unmatchedBarcodes.slice(0, 10).map((b) => `Barkod: ${b}`),
+      });
+      return;
+    }
+
+    if (unmatchedBarcodes.length > 0) {
+      setNotificationModal({
+        isOpen: true,
+        type: "warning",
+        title: "Kismi Eslestirme",
+        message: `${drafts.length} urun eslesti, ${unmatchedBarcodes.length} barkod eslesemedi.`,
+        details: unmatchedBarcodes.slice(0, 10).map((b) => `Barkod: ${b}`),
       });
     }
 
@@ -342,27 +471,50 @@ export function AdminBulkUploadPage() {
         {products.length === 0 && (
           <div className="bg-white rounded-lg shadow p-8">
             <div className="text-center">
-              <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                Ürün Klasörlerini Seçin
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                Ana klasörü seçin. İçindeki her alt klasör bir ürün olacak.
-                <br />
-                Klasör adı = Ürün Kodu
-              </p>
-              <label className="inline-block cursor-pointer bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800">
-                <input
-                  type="file"
-                  /* @ts-ignore */
-                  webkitdirectory="true"
-                  directory="true"
-                  multiple
-                  onChange={handleFolderSelect}
-                  className="hidden"
-                />
-                Klasör Seç
-              </label>
+              {processing ? (
+                <>
+                  <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    Barkodlar Eslestiriliyor...
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Fotograflar urunlerle eslestirilirken lutfen bekleyin
+                  </p>
+                </>
+              ) : (
+                <>
+                  <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    Foto Klasorunu Secin
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Iki mod desteklenir:
+                  </p>
+                  <div className="text-xs text-gray-500 mb-6 space-y-1">
+                    <p>
+                      <strong>1. Barkod modu:</strong> Tek klasorde barkod adli
+                      fotograflar (8680699097936_1.jpg) → otomatik urun
+                      eslestirme
+                    </p>
+                    <p>
+                      <strong>2. Klasor modu:</strong> Her alt klasor = urun
+                      kodu → klasor adi ile eslestirme
+                    </p>
+                  </div>
+                  <label className="inline-block cursor-pointer bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800">
+                    <input
+                      type="file"
+                      /* @ts-ignore */
+                      webkitdirectory="true"
+                      directory="true"
+                      multiple
+                      onChange={handleFolderSelect}
+                      className="hidden"
+                    />
+                    Klasör Seç
+                  </label>
+                </>
+              )}
             </div>
           </div>
         )}

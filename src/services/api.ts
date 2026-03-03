@@ -698,6 +698,27 @@ class ApiClient {
       },
     );
   }
+
+  // Barkod numarasina gore urun bul
+  async adminFindByBarcode(
+    barcode: string,
+    token: string,
+  ): Promise<{
+    exists: boolean;
+    product: {
+      id: string;
+      productCode: string;
+      title: string;
+      imageCount: number;
+    } | null;
+  }> {
+    return this.request(
+      `/admin/products/find-by-barcode?barcode=${encodeURIComponent(barcode)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  }
 }
 
 export const apiClient = new ApiClient(API_URL);
