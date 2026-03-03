@@ -6,6 +6,7 @@ import * as usersController from "../controllers/users.controller.js";
 import * as settingsController from "../controllers/settings.controller.js";
 import * as uploadController from "../controllers/upload.controller.js";
 import * as ordersController from "../controllers/orders.controller.js";
+import * as excelImportController from "../controllers/excel-import.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
 
@@ -14,9 +15,28 @@ const router = Router();
 // Public route - no auth required
 router.post("/login", adminController.loginHandler);
 
-// Products (Protected)
+// Products - Static routes FIRST (before :id params)
 router.get("/products", authMiddleware, adminController.getProductsHandler);
 router.post("/products", authMiddleware, adminController.createProductHandler);
+
+// Excel Import / Bulk Operations (must be before :id routes)
+router.post(
+  "/products/bulk-import",
+  authMiddleware,
+  excelImportController.bulkImportHandler,
+);
+router.post(
+  "/products/add-photos",
+  authMiddleware,
+  excelImportController.addPhotosToProductHandler,
+);
+router.get(
+  "/products/check-code",
+  authMiddleware,
+  excelImportController.checkProductCodeHandler,
+);
+
+// Products - Dynamic :id routes
 router.put(
   "/products/:id",
   authMiddleware,

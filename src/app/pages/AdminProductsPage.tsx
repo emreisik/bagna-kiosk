@@ -4,7 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "../components/admin/AdminLayout";
 import { apiClient } from "../../services/api";
 import { useCurrency } from "../../hooks/useCurrency";
-import { Plus, Pencil, Trash2, Check, XCircle, FolderPlus } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Check,
+  XCircle,
+  FolderPlus,
+  FileSpreadsheet,
+} from "lucide-react";
 import {
   NotificationModal,
   NotificationType,
@@ -377,6 +385,13 @@ export function AdminProductsPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Ürünler</h1>
           <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/admin/products/excel-import")}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+              Excel Import
+            </button>
             <button
               onClick={() => navigate("/admin/products/bulk-upload")}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"

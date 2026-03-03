@@ -7,6 +7,7 @@ import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { AdminProductsPage } from "./pages/AdminProductsPage";
 import { AdminProductFormPage } from "./pages/AdminProductFormPage";
 import { AdminBulkUploadPage } from "./pages/AdminBulkUploadPage";
+import { AdminExcelImportPage } from "./pages/AdminExcelImportPage";
 import { AdminBrandsPage } from "./pages/AdminBrandsPage";
 import { AdminCategoriesPage } from "./pages/AdminCategoriesPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
@@ -59,6 +60,10 @@ export const router = createBrowserRouter([
   {
     path: "/admin/products/bulk-upload",
     element: <AdminBulkUploadPage />, // Toplu ürün yükleme
+  },
+  {
+    path: "/admin/products/excel-import",
+    element: <AdminExcelImportPage />, // Excel'den toplu import
   },
   {
     path: "/admin/products/:id/edit",

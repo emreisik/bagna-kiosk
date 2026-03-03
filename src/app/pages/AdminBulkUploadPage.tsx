@@ -21,6 +21,9 @@ interface ProductDraft {
   status: "pending" | "approved" | "rejected";
   uploadStatus: "waiting" | "uploading" | "success" | "error";
   errorMessage?: string; // Hata mesajı
+  existingProductId?: string; // Mevcut urun varsa ID'si
+  existingImageCount?: number; // Mevcut gorsel sayisi
+  mode: "create" | "update"; // Yeni urun mu, mevcut urune foto ekle mi
 }
 
 export function AdminBulkUploadPage() {
@@ -83,7 +86,7 @@ export function AdminBulkUploadPage() {
     }
   };
 
-  const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFolderSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -104,9 +107,10 @@ export function AdminBulkUploadPage() {
       }
     });
 
-    // Her klasör için bir ürün taslağı oluştur
+    // Her klasör için mevcut ürün kontrolü yap ve taslak oluştur
     const drafts: ProductDraft[] = [];
-    folderMap.forEach((images, folderName) => {
+
+    for (const [folderName, images] of folderMap) {
       // Brand-admin için tek marka varsa otomatik seç
       const defaultBrandId =
         !canEditAllBrands && availableBrands.length === 1
@@ -115,6 +119,22 @@ export function AdminBulkUploadPage() {
 
       // Status: Brand-admin + requiresApproval=true ise "pending"
       const defaultStatus = canEditStatus ? "approved" : "pending";
+
+      // Mevcut ürün kontrolü
+      let mode: "create" | "update" = "create";
+      let existingProductId: string | undefined;
+      let existingImageCount: number | undefined;
+
+      try {
+        const check = await apiClient.adminCheckProductCode(folderName, token);
+        if (check.exists && check.product) {
+          mode = "update";
+          existingProductId = check.product.id;
+          existingImageCount = check.product.imageCount;
+        }
+      } catch {
+        // Kontrol başarısız olursa yeni ürün olarak devam et
+      }
 
       drafts.push({
         id: Math.random().toString(36).substring(7),
@@ -128,8 +148,11 @@ export function AdminBulkUploadPage() {
         price: "",
         status: defaultStatus,
         uploadStatus: "waiting",
+        mode,
+        existingProductId,
+        existingImageCount,
       });
-    });
+    }
 
     setProducts(drafts);
   };
@@ -161,8 +184,9 @@ export function AdminBulkUploadPage() {
   const bulkCategory = categories.find((c) => c.id === bulkCategoryId);
 
   const handleSubmitAll = async () => {
-    // Validation: Tüm gerekli alanları kontrol et
-    const missingFields = products.filter(
+    // Validation: Sadece yeni ürünler için zorunlu alanları kontrol et
+    const newProducts = products.filter((p) => p.mode === "create");
+    const missingFields = newProducts.filter(
       (p) => !p.categoryId || !p.sizeRange || !p.price || !p.brandId,
     );
 
@@ -172,7 +196,7 @@ export function AdminBulkUploadPage() {
         type: "error",
         title: "Eksik Bilgi",
         message:
-          "Lütfen tüm ürünler için kategori, marka, beden ve fiyat bilgisi girin!",
+          "Lütfen yeni ürünler için kategori, marka, beden ve fiyat bilgisi girin!",
         details: missingFields.map(
           (p) => `${p.folderName} - Eksik alanlar mevcut`,
         ),
@@ -196,43 +220,44 @@ export function AdminBulkUploadPage() {
         );
         const uploadedUrls = uploadResult.images.map((img) => img.url);
 
-        // 2. Ürünü oluştur
-        await apiClient.adminCreateProduct(
-          {
-            title: product.folderName,
-            productCode: product.folderName,
-            shortDesc: product.folderName,
-            mainImageUrl: uploadedUrls[0],
-            categoryId: product.categoryId,
-            subcategoryId: product.subcategoryId || undefined,
-            brandId: product.brandId || undefined,
-            sizeRange: product.sizeRange,
-            price: product.price,
-            status: product.status,
-            images: uploadedUrls.slice(1).map((url, index) => ({
-              imageUrl: url,
-              displayOrder: index,
-            })),
-          } as any,
-          token,
-        );
+        if (product.mode === "update") {
+          // Mevcut ürüne fotoğraf ekle
+          await apiClient.adminAddPhotosToProduct(
+            product.folderName,
+            uploadedUrls,
+            true, // Mevcut placeholder görselleri değiştir
+            token,
+          );
+        } else {
+          // 2. Yeni ürün oluştur
+          await apiClient.adminCreateProduct(
+            {
+              title: product.folderName,
+              productCode: product.folderName,
+              shortDesc: product.folderName,
+              mainImageUrl: uploadedUrls[0],
+              categoryId: product.categoryId,
+              subcategoryId: product.subcategoryId || undefined,
+              brandId: product.brandId || undefined,
+              sizeRange: product.sizeRange,
+              price: product.price,
+              status: product.status,
+              images: uploadedUrls.slice(1).map((url, index) => ({
+                imageUrl: url,
+                displayOrder: index,
+              })),
+            } as any,
+            token,
+          );
+        }
 
         updateProduct(product.id, { uploadStatus: "success" });
       } catch (error: any) {
         const errorMessage = error?.message || "Bilinmeyen hata";
         console.error(
-          `❌ Ürün oluşturma hatası: ${product.folderName}`,
+          `Ürün işlemi hatası: ${product.folderName} (${product.mode})`,
           "\nHata mesajı:",
           errorMessage,
-          "\nÜrün verisi:",
-          {
-            productCode: product.folderName,
-            categoryId: product.categoryId,
-            brandId: product.brandId,
-            sizeRange: product.sizeRange,
-            price: product.price,
-            status: product.status,
-          },
         );
         updateProduct(product.id, { uploadStatus: "error", errorMessage });
       }
@@ -347,8 +372,24 @@ export function AdminBulkUploadPage() {
           <div className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-blue-800">
-                <strong>{products.length} ürün</strong> hazır. Lütfen her ürün
-                için bilgileri girin ve "Tümünü Kaydet" butonuna tıklayın.
+                <strong>{products.length} klasör</strong> bulundu.
+                {products.filter((p) => p.mode === "update").length > 0 && (
+                  <>
+                    {" "}
+                    <span className="font-semibold text-blue-700">
+                      {products.filter((p) => p.mode === "update").length}{" "}
+                      mevcut ürün
+                    </span>{" "}
+                    (fotoğraf güncellenecek),{" "}
+                    <span className="font-semibold text-green-700">
+                      {products.filter((p) => p.mode === "create").length} yeni
+                      ürün
+                    </span>{" "}
+                    (oluşturulacak).
+                  </>
+                )}
+                {products.filter((p) => p.mode === "update").length === 0 &&
+                  ' Lütfen her ürün için bilgileri girin ve "Tümünü Kaydet" butonuna tıklayın.'}
               </p>
             </div>
 
@@ -557,185 +598,216 @@ export function AdminBulkUploadPage() {
                     <div className="col-span-9 grid grid-cols-2 gap-4">
                       {/* Ürün Kodu */}
                       <div className="col-span-2">
-                        <label className="block text-sm font-medium mb-1">
-                          Ürün Kodu *
-                        </label>
+                        <div className="flex items-center gap-2 mb-1">
+                          <label className="block text-sm font-medium">
+                            Ürün Kodu *
+                          </label>
+                          {product.mode === "update" ? (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                              Mevcut Ürün - Fotoğraf Güncellenecek
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                              Yeni Ürün
+                            </span>
+                          )}
+                        </div>
                         <input
                           type="text"
                           value={product.folderName}
                           readOnly
                           className="w-full px-3 py-2 border rounded bg-gray-50"
                         />
-                      </div>
-
-                      {/* Kategori */}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Kategori *
-                        </label>
-                        <select
-                          value={product.categoryId}
-                          onChange={(e) =>
-                            updateProduct(product.id, {
-                              categoryId: e.target.value,
-                              subcategoryId: "", // Reset subcategory
-                            })
-                          }
-                          className="w-full px-3 py-2 border rounded"
-                          disabled={product.uploadStatus !== "waiting"}
-                        >
-                          <option value="">Seçiniz</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.displayName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Alt Kategori */}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Alt Kategori
-                        </label>
-                        <select
-                          value={product.subcategoryId}
-                          onChange={(e) =>
-                            updateProduct(product.id, {
-                              subcategoryId: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border rounded"
-                          disabled={
-                            !product.categoryId ||
-                            product.uploadStatus !== "waiting"
-                          }
-                        >
-                          <option value="">Seçiniz</option>
-                          {category?.subcategories?.map((sub: any) => (
-                            <option key={sub.id} value={sub.id}>
-                              {sub.displayName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Marka */}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Marka
-                        </label>
-                        <select
-                          value={product.brandId}
-                          onChange={(e) =>
-                            updateProduct(product.id, {
-                              brandId: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border rounded disabled:bg-gray-100"
-                          disabled={
-                            product.uploadStatus !== "waiting" ||
-                            !canEditAllBrands
-                          }
-                        >
-                          {canEditAllBrands && (
-                            <option value="">Seçiniz</option>
-                          )}
-                          {availableBrands.map((brand) => (
-                            <option key={brand.id} value={brand.id}>
-                              {brand.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Beden Aralığı */}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Beden Aralığı *
-                        </label>
-                        <select
-                          value={product.sizeRange}
-                          onChange={(e) =>
-                            updateProduct(product.id, {
-                              sizeRange: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border rounded"
-                          disabled={product.uploadStatus !== "waiting"}
-                        >
-                          <option value="">Seçiniz</option>
-                          <option value="36-42">36-42</option>
-                          <option value="42-48">42-48</option>
-                          <option value="S-XL">S-XL</option>
-                          <option value="M-XXL">M-XXL</option>
-                          <option value="XS-L">XS-L</option>
-                        </select>
-                      </div>
-
-                      {/* Fiyat */}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Fiyat *
-                        </label>
-                        <input
-                          type="text"
-                          value={product.price}
-                          onChange={(e) =>
-                            updateProduct(product.id, {
-                              price: e.target.value,
-                            })
-                          }
-                          placeholder="Örn: 145$"
-                          className="w-full px-3 py-2 border rounded"
-                          disabled={product.uploadStatus !== "waiting"}
-                        />
-                        <div className="flex gap-2 mt-2 flex-wrap">
-                          {[10, 20, 30, 50, 100, 150, 200].map((value) => (
-                            <button
-                              key={value}
-                              type="button"
-                              onClick={() =>
-                                updateProduct(product.id, {
-                                  price: `${value}`,
-                                })
-                              }
-                              disabled={product.uploadStatus !== "waiting"}
-                              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                            >
-                              {value}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Durum */}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Durum
-                        </label>
-                        <select
-                          value={product.status}
-                          onChange={(e) =>
-                            updateProduct(product.id, {
-                              status: e.target.value as any,
-                            })
-                          }
-                          className="w-full px-3 py-2 border rounded disabled:bg-gray-100"
-                          disabled={
-                            product.uploadStatus !== "waiting" || !canEditStatus
-                          }
-                        >
-                          <option value="pending">Beklemede</option>
-                          <option value="approved">Onaylandı</option>
-                          <option value="rejected">Reddedildi</option>
-                        </select>
-                        {!canEditStatus && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            Ürünler otomatik "Beklemede" olarak oluşturulur.
+                        {product.mode === "update" && (
+                          <p className="mt-1 text-xs text-blue-600">
+                            Bu ürün kodu sistemde mevcut (
+                            {product.existingImageCount || 0} görsel).
+                            Fotoğraflar güncellenecek.
                           </p>
                         )}
                       </div>
+
+                      {/* Kategori - sadece yeni ürünlerde göster */}
+                      {product.mode === "create" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Kategori *
+                          </label>
+                          <select
+                            value={product.categoryId}
+                            onChange={(e) =>
+                              updateProduct(product.id, {
+                                categoryId: e.target.value,
+                                subcategoryId: "", // Reset subcategory
+                              })
+                            }
+                            className="w-full px-3 py-2 border rounded"
+                            disabled={product.uploadStatus !== "waiting"}
+                          >
+                            <option value="">Seçiniz</option>
+                            {categories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Alt Kategori - sadece yeni ürünlerde */}
+                      {product.mode === "create" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Alt Kategori
+                          </label>
+                          <select
+                            value={product.subcategoryId}
+                            onChange={(e) =>
+                              updateProduct(product.id, {
+                                subcategoryId: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border rounded"
+                            disabled={
+                              !product.categoryId ||
+                              product.uploadStatus !== "waiting"
+                            }
+                          >
+                            <option value="">Seçiniz</option>
+                            {category?.subcategories?.map((sub: any) => (
+                              <option key={sub.id} value={sub.id}>
+                                {sub.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Marka - sadece yeni ürünlerde */}
+                      {product.mode === "create" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Marka
+                          </label>
+                          <select
+                            value={product.brandId}
+                            onChange={(e) =>
+                              updateProduct(product.id, {
+                                brandId: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border rounded disabled:bg-gray-100"
+                            disabled={
+                              product.uploadStatus !== "waiting" ||
+                              !canEditAllBrands
+                            }
+                          >
+                            {canEditAllBrands && (
+                              <option value="">Seçiniz</option>
+                            )}
+                            {availableBrands.map((brand) => (
+                              <option key={brand.id} value={brand.id}>
+                                {brand.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Beden Aralığı - sadece yeni ürünlerde */}
+                      {product.mode === "create" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Beden Aralığı *
+                          </label>
+                          <select
+                            value={product.sizeRange}
+                            onChange={(e) =>
+                              updateProduct(product.id, {
+                                sizeRange: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border rounded"
+                            disabled={product.uploadStatus !== "waiting"}
+                          >
+                            <option value="">Seçiniz</option>
+                            <option value="36-42">36-42</option>
+                            <option value="42-48">42-48</option>
+                            <option value="S-XL">S-XL</option>
+                            <option value="M-XXL">M-XXL</option>
+                            <option value="XS-L">XS-L</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Fiyat - sadece yeni ürünlerde */}
+                      {product.mode === "create" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Fiyat *
+                          </label>
+                          <input
+                            type="text"
+                            value={product.price}
+                            onChange={(e) =>
+                              updateProduct(product.id, {
+                                price: e.target.value,
+                              })
+                            }
+                            placeholder="Örn: 145$"
+                            className="w-full px-3 py-2 border rounded"
+                            disabled={product.uploadStatus !== "waiting"}
+                          />
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            {[10, 20, 30, 50, 100, 150, 200].map((value) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() =>
+                                  updateProduct(product.id, {
+                                    price: `${value}`,
+                                  })
+                                }
+                                disabled={product.uploadStatus !== "waiting"}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+                              >
+                                {value}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Durum - sadece yeni ürünlerde */}
+                      {product.mode === "create" && (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Durum
+                          </label>
+                          <select
+                            value={product.status}
+                            onChange={(e) =>
+                              updateProduct(product.id, {
+                                status: e.target.value as any,
+                              })
+                            }
+                            className="w-full px-3 py-2 border rounded disabled:bg-gray-100"
+                            disabled={
+                              product.uploadStatus !== "waiting" ||
+                              !canEditStatus
+                            }
+                          >
+                            <option value="pending">Beklemede</option>
+                            <option value="approved">Onaylandı</option>
+                            <option value="rejected">Reddedildi</option>
+                          </select>
+                          {!canEditStatus && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Ürünler otomatik "Beklemede" olarak oluşturulur.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

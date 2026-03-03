@@ -645,6 +645,59 @@ class ApiClient {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  // Bulk Import (Excel)
+  async adminBulkImport(
+    data: {
+      products: Array<{
+        productCode: string;
+        productName: string;
+        price: number;
+        colors: string[];
+        sizes: string[];
+        barcodes: string[];
+      }>;
+      brandId?: string;
+      status?: string;
+    },
+    token: string,
+  ): Promise<{ created: number; skipped: number; errors: string[] }> {
+    return this.request("/admin/products/bulk-import", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Urun koduna gore fotograf ekle
+  async adminAddPhotosToProduct(
+    productCode: string,
+    imageUrls: string[],
+    replaceExisting: boolean,
+    token: string,
+  ): Promise<any> {
+    return this.request("/admin/products/add-photos", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ productCode, imageUrls, replaceExisting }),
+    });
+  }
+
+  // Urun kodu var mi kontrol et
+  async adminCheckProductCode(
+    code: string,
+    token: string,
+  ): Promise<{
+    exists: boolean;
+    product: { id: string; productCode: string; imageCount: number } | null;
+  }> {
+    return this.request(
+      `/admin/products/check-code?code=${encodeURIComponent(code)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  }
 }
 
 export const apiClient = new ApiClient(API_URL);
