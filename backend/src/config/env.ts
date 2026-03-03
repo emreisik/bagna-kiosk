@@ -18,6 +18,8 @@ const envSchema = z.object({
   // Resend email
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().email().default("noreply@bagnaxclusive.com"),
+  // Cloudinary - gorsel CDN (CLOUDINARY_URL formatı: cloudinary://api_key:api_secret@cloud_name)
+  CLOUDINARY_URL: z.string().optional(),
 });
 
 export const config = envSchema.parse(process.env);
