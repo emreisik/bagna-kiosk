@@ -24,23 +24,52 @@ interface ParsedProduct {
   categoryGuess: string;
 }
 
+// Turkce karakterleri ASCII'ye normalize et (İ→i, Ş→s, Ü→u, vb.)
+function normalizeTurkish(str: string): string {
+  return str
+    .replace(/İ/g, "I")
+    .replace(/ı/g, "i")
+    .replace(/Ş/g, "S")
+    .replace(/ş/g, "s")
+    .replace(/Ç/g, "C")
+    .replace(/ç/g, "c")
+    .replace(/Ğ/g, "G")
+    .replace(/ğ/g, "g")
+    .replace(/Ö/g, "O")
+    .replace(/ö/g, "o")
+    .replace(/Ü/g, "U")
+    .replace(/ü/g, "u")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+// Beden listesinden toptan format (36-42)
+function formatSizeRange(sizes: string[]): string {
+  const nums = sizes.filter((s) => !isNaN(Number(s))).map(Number);
+  if (nums.length > 0) {
+    return `${Math.min(...nums)}-${Math.max(...nums)}`;
+  }
+  return sizes.join("-");
+}
+
 // Urun adina gore kategori tahmini
 function guessCategory(productName: string): string {
-  const upper = productName.toUpperCase();
-  if (upper.includes("PANTOLONLU TAKIM")) return "Pantolonlu Takim";
-  if (upper.includes("YELEKLI TAKIM")) return "Yelekli Takim";
-  if (upper.includes("DENIM PANTOLON")) return "Denim Pantolon";
-  if (upper.includes("CEKET")) return "Ceket";
-  if (upper.includes("YELEK")) return "Yelek";
-  if (upper.includes("GOMLEK") || upper.includes("GÖMLEK")) return "Gomlek";
-  if (upper.includes("BLUZ")) return "Bluz";
-  if (upper.includes("TISORT") || upper.includes("TİŞÖRT")) return "Tisort";
-  if (upper.includes("TRIKO") || upper.includes("TRİKO")) return "Triko";
-  if (upper.includes("PANTOLON")) return "Pantolon";
-  if (upper.includes("ETEK")) return "Etek";
-  if (upper.includes("SORT") || upper.includes("ŞORT")) return "Sort";
-  if (upper.includes("TAYT")) return "Tayt";
-  if (upper.includes("ELBISE")) return "Elbise";
+  const normalized = normalizeTurkish(productName);
+  if (normalized.includes("pantolonlu takim")) return "Pantolonlu Takim";
+  if (normalized.includes("yelekli takim")) return "Yelekli Takim";
+  if (normalized.includes("denim pantolon")) return "Denim Pantolon";
+  if (normalized.includes("ceket")) return "Ceket";
+  if (normalized.includes("yelek")) return "Yelek";
+  if (normalized.includes("gomlek")) return "Gomlek";
+  if (normalized.includes("bluz")) return "Bluz";
+  if (normalized.includes("tisort")) return "Tisort";
+  if (normalized.includes("triko")) return "Triko";
+  if (normalized.includes("pantolon")) return "Pantolon";
+  if (normalized.includes("etek")) return "Etek";
+  if (normalized.includes("sort")) return "Sort";
+  if (normalized.includes("tayt")) return "Tayt";
+  if (normalized.includes("elbise")) return "Elbise";
   return "Diger";
 }
 
@@ -98,32 +127,26 @@ function parseCsvFile(file: File): Promise<ParsedProduct[]> {
         }
 
         const delimiter = detectDelimiter(lines[0]);
-        const headers = parseCsvLine(lines[0], delimiter).map((h) =>
-          h.toLowerCase().trim(),
+        // BOM karakterini temizle + Turkce normalize et
+        const rawHeaders = parseCsvLine(
+          lines[0].replace(/^\uFEFF/, ""),
+          delimiter,
         );
+        const headers = rawHeaders.map((h) => normalizeTurkish(h.trim()));
 
-        // Sutun indekslerini bul
+        // Sutun indekslerini bul (normalize edilmis headerlar)
         const colMap = {
           productCode: headers.findIndex(
-            (h) =>
-              h.includes("ürün kodu") ||
-              h.includes("urun kodu") ||
-              h.includes("product code"),
+            (h) => h.includes("urun kodu") || h.includes("product code"),
           ),
           productName: headers.findIndex(
-            (h) =>
-              h.includes("ürün adı") ||
-              h.includes("urun adi") ||
-              h.includes("product name"),
+            (h) => h.includes("urun adi") || h.includes("product name"),
           ),
           colorCode: headers.findIndex(
             (h) => h.includes("renk kodu") || h.includes("color code"),
           ),
           colorName: headers.findIndex(
-            (h) =>
-              h.includes("renk açıklaması") ||
-              h.includes("renk aciklamasi") ||
-              h.includes("color"),
+            (h) => h.includes("renk aciklamasi") || h.includes("color"),
           ),
           size: headers.findIndex(
             (h) => h.includes("beden") || h.includes("size"),
@@ -528,7 +551,7 @@ export function AdminExcelImportPage() {
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-xs text-gray-600">
-                            {product.sizes.join(", ")}
+                            {formatSizeRange(product.sizes)}
                           </td>
                           <td className="px-4 py-2.5 text-right font-medium">
                             {product.price}$
