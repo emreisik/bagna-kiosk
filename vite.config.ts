@@ -43,15 +43,36 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Eski bozuk cache'i temizle
+        cleanupOutdatedCaches: true,
+        // Yeni SW hemen devreye girsin
+        skipWaiting: true,
+        clientsClaim: true,
+        // Cloudinary gibi harici CDN URL'lerini SW'den haric tut
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-            handler: "CacheFirst",
+            // Cloudinary gorselleri - NetworkFirst (CDN zaten hizli, SW karismasin)
+            urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
+            handler: "NetworkFirst",
             options: {
-              cacheName: "images-cache",
+              cacheName: "cloudinary-images",
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 gün
+                maxEntries: 200,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 gun
+              },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            // Yerel gorseller (same-origin) - StaleWhileRevalidate
+            urlPattern: /\/uploads\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "uploads-cache",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 gun
               },
             },
           },
@@ -65,17 +86,6 @@ export default defineConfig({
                 maxAgeSeconds: 5 * 60, // 5 dakika
               },
               networkTimeoutSeconds: 10,
-            },
-          },
-          {
-            urlPattern: /\/uploads\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "uploads-cache",
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 gün
-              },
             },
           },
         ],
