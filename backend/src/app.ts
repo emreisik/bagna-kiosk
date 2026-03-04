@@ -32,7 +32,11 @@ export async function createApp(): Promise<Express> {
                   "https:",
                   "http:",
                 ],
-                connectSrc: ["'self'", "https://api.qrserver.com"], // QR code API için
+                connectSrc: [
+                  "'self'",
+                  "https://api.qrserver.com",
+                  "https://res.cloudinary.com", // Cloudinary CDN gorselleri
+                ],
               },
             }
           : false,
