@@ -1,18 +1,24 @@
-import { Product } from '../data/products';
+import { Product } from "../data/products";
 
 /**
  * Get products by category
  */
-export function getProductsByCategory(products: Product[], category: string): Product[] {
-  return products.filter(p => p.category === category);
+export function getProductsByCategory(
+  products: Product[],
+  category: string,
+): Product[] {
+  return products.filter((p) => p.category === category);
 }
 
 /**
  * Get products by tag (products must have ALL specified tags)
  */
-export function getProductsByTags(products: Product[], tags: string[]): Product[] {
+export function getProductsByTags(
+  products: Product[],
+  tags: string[],
+): Product[] {
   if (tags.length === 0) return products;
-  return products.filter(p => tags.every(tag => p.tags.includes(tag)));
+  return products.filter((p) => tags.every((tag) => p.tags.includes(tag)));
 }
 
 /**
@@ -20,13 +26,14 @@ export function getProductsByTags(products: Product[], tags: string[]): Product[
  */
 export function searchProducts(products: Product[], query: string): Product[] {
   if (!query.trim()) return products;
-  
+
   const lowerQuery = query.toLowerCase();
-  return products.filter(p => 
-    p.title.toLowerCase().includes(lowerQuery) ||
-    p.shortDesc.toLowerCase().includes(lowerQuery) ||
-    p.category.toLowerCase().includes(lowerQuery) ||
-    p.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+  return products.filter(
+    (p) =>
+      p.title.toLowerCase().includes(lowerQuery) ||
+      p.shortDesc.toLowerCase().includes(lowerQuery) ||
+      p.category.toLowerCase().includes(lowerQuery) ||
+      p.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)),
   );
 }
 
@@ -36,48 +43,56 @@ export function searchProducts(products: Product[], query: string): Product[] {
 export function getSimilarProducts(
   allProducts: Product[],
   product: Product,
-  limit: number = 6
+  limit: number = 6,
 ): Product[] {
   return allProducts
-    .filter(p => p.id !== product.id)
-    .map(p => ({
+    .filter((p) => p.id !== product.id)
+    .map((p) => ({
       product: p,
       score: calculateSimilarityScore(product, p),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
-    .map(item => item.product);
+    .map((item) => item.product);
 }
 
 /**
  * Calculate similarity score between two products
  */
-function calculateSimilarityScore(product1: Product, product2: Product): number {
+function calculateSimilarityScore(
+  product1: Product,
+  product2: Product,
+): number {
   let score = 0;
-  
+
   // Same category: +10 points
   if (product1.category === product2.category) {
     score += 10;
   }
-  
+
   // Each shared tag: +5 points
-  const sharedTags = product1.tags.filter(tag => product2.tags.includes(tag));
+  const sharedTags = product1.tags.filter((tag) => product2.tags.includes(tag));
   score += sharedTags.length * 5;
-  
+
   return score;
 }
 
 /**
  * Group products by category
  */
-export function groupProductsByCategory(products: Product[]): Record<string, Product[]> {
-  return products.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    acc[product.category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
+export function groupProductsByCategory(
+  products: Product[],
+): Record<string, Product[]> {
+  return products.reduce(
+    (acc, product) => {
+      if (!acc[product.category]) {
+        acc[product.category] = [];
+      }
+      acc[product.category].push(product);
+      return acc;
+    },
+    {} as Record<string, Product[]>,
+  );
 }
 
 /**
@@ -85,7 +100,7 @@ export function groupProductsByCategory(products: Product[]): Record<string, Pro
  */
 export function getAllUniqueTags(products: Product[]): string[] {
   const tagSet = new Set<string>();
-  products.forEach(p => p.tags.forEach(tag => tagSet.add(tag)));
+  products.forEach((p) => p.tags.forEach((tag) => tagSet.add(tag)));
   return Array.from(tagSet).sort();
 }
 
@@ -94,7 +109,7 @@ export function getAllUniqueTags(products: Product[]): string[] {
  */
 export function getAllUniqueCategories(products: Product[]): string[] {
   const categorySet = new Set<string>();
-  products.forEach(p => categorySet.add(p.category));
+  products.forEach((p) => categorySet.add(p.category));
   return Array.from(categorySet).sort();
 }
 
@@ -103,14 +118,14 @@ export function getAllUniqueCategories(products: Product[]): string[] {
  */
 export function validateProduct(product: any): product is Product {
   return (
-    typeof product === 'object' &&
-    typeof product.id === 'string' &&
-    typeof product.title === 'string' &&
-    typeof product.imageUrl === 'string' &&
-    typeof product.category === 'string' &&
+    typeof product === "object" &&
+    typeof product.id === "string" &&
+    typeof product.title === "string" &&
+    typeof product.imageUrl === "string" &&
+    typeof product.category === "string" &&
     Array.isArray(product.tags) &&
-    typeof product.shortDesc === 'string' &&
-    product.tags.every((tag: any) => typeof tag === 'string')
+    typeof product.shortDesc === "string" &&
+    product.tags.every((tag: any) => typeof tag === "string")
   );
 }
 
@@ -129,8 +144,69 @@ export function shuffleProducts(products: Product[]): Product[] {
 /**
  * Get random products
  */
-export function getRandomProducts(products: Product[], count: number): Product[] {
+export function getRandomProducts(
+  products: Product[],
+  count: number,
+): Product[] {
   return shuffleProducts(products).slice(0, count);
+}
+
+/**
+ * Harf bedenleri sıra haritası
+ */
+const letterSizeOrder: Record<string, number> = {
+  XS: 1,
+  S: 2,
+  M: 3,
+  L: 4,
+  XL: 5,
+  XXL: 6,
+  "2XL": 6,
+  "3XL": 7,
+  XXXL: 7,
+};
+
+/**
+ * Seri beden aralığından beden sayısını hesapla
+ * "36-42" → 4 (36, 38, 40, 42 - 2'şer artar)
+ * "36-40" → 3 (36, 38, 40)
+ * "S-XL"  → 4 (S, M, L, XL)
+ * "42"    → 1 (tek beden)
+ */
+export function getSizeCount(sizeRange: string): number {
+  if (!sizeRange) return 1;
+
+  const parts = sizeRange.split("-").map((s) => s.trim());
+  if (parts.length !== 2) return 1;
+
+  const [startStr, endStr] = parts;
+
+  // Sayısal beden aralığı: "36-42"
+  const startNum = parseInt(startStr);
+  const endNum = parseInt(endStr);
+  if (!isNaN(startNum) && !isNaN(endNum) && endNum >= startNum) {
+    return (endNum - startNum) / 2 + 1;
+  }
+
+  // Harf beden aralığı: "S-XL"
+  const startOrder = letterSizeOrder[startStr.toUpperCase()];
+  const endOrder = letterSizeOrder[endStr.toUpperCase()];
+  if (
+    startOrder !== undefined &&
+    endOrder !== undefined &&
+    endOrder >= startOrder
+  ) {
+    return endOrder - startOrder + 1;
+  }
+
+  return 1;
+}
+
+/**
+ * Seri fiyatı hesapla: birim fiyat × beden sayısı
+ */
+export function getSeriesPrice(unitPrice: number, sizeRange: string): number {
+  return unitPrice * getSizeCount(sizeRange);
 }
 
 /**
@@ -142,7 +218,10 @@ export interface FilterCriteria {
   searchQuery?: string;
 }
 
-export function filterProducts(products: Product[], criteria: FilterCriteria): Product[] {
+export function filterProducts(
+  products: Product[],
+  criteria: FilterCriteria,
+): Product[] {
   let filtered = [...products];
 
   // Apply category filter

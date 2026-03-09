@@ -13,6 +13,7 @@ import { useI18n } from "../../contexts/I18nContext";
 import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
+import { getSizeCount } from "../../utils/productHelpers";
 import type { ProductVariant } from "../../data/products";
 
 const localeMap: Record<string, string> = {
@@ -138,10 +139,12 @@ export function ProductDetailPage() {
   const displayPrice = selectedVariant?.price || product?.price || "";
   const displaySizeRange = selectedSizeRange || product?.sizeRange || "";
 
-  // Parse price for display
+  // Parse price for display - seri beden çarpanı uygulanır
   const priceNumeric = displayPrice.replace(/[^0-9.,]/g, "").replace(",", ".");
-  const priceFormatted = parseFloat(priceNumeric)
-    ? parseFloat(priceNumeric).toLocaleString(localeMap[language] || "tr-TR", {
+  const unitPriceVal = parseFloat(priceNumeric) || 0;
+  const seriesTotalPrice = unitPriceVal * getSizeCount(displaySizeRange);
+  const priceFormatted = seriesTotalPrice
+    ? seriesTotalPrice.toLocaleString(localeMap[language] || "tr-TR", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       })

@@ -15,6 +15,7 @@ import { useCreateOrder } from "../../hooks/useOrders";
 import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
+import { getSizeCount } from "../../utils/productHelpers";
 import { motion, AnimatePresence } from "motion/react";
 
 const WHATSAPP_NUMBER = "905385717136";
@@ -81,7 +82,7 @@ function buildWhatsAppMessage(
     `${form.address}`,
     "",
     ...items.map((item) => {
-      const itemPrice = parsePrice(item.price);
+      const itemPrice = parsePrice(item.price) * getSizeCount(item.sizeRange);
       const subtotal = itemPrice * item.quantity;
       const colorInfo = item.color ? ` | ${item.color}` : "";
       return `- ${item.productCode} | ${item.title} | ${item.sizeRange}${colorInfo} | x${item.quantity} | ${formatPrice(subtotal, lang)} ${currency}`;
@@ -112,12 +113,15 @@ export function CheckoutPage() {
     formState: { errors },
   } = useForm<CheckoutForm>();
 
-  // Fiyat hesaplamalari - varyant fiyati oncelikli
+  // Fiyat hesaplamalari - seri beden çarpanı uygulanır
   const cartCalculations = useMemo(() => {
     let subtotal = 0;
     const itemSubtotals = items.map((item) => {
       const priceStr = item.selectedVariant?.price || item.product.price;
-      const unitPrice = parsePrice(priceStr);
+      const sizeRange =
+        item.selectedVariant?.sizeRange || item.product.sizeRange;
+      const basePrice = parsePrice(priceStr);
+      const unitPrice = basePrice * getSizeCount(sizeRange);
       const itemTotal = unitPrice * item.quantity;
       subtotal += itemTotal;
       return { unitPrice, itemTotal };

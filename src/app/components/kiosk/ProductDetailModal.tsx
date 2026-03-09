@@ -4,6 +4,7 @@ import { Product } from "../../../data/products";
 import { useCurrency } from "../../../hooks/useCurrency";
 import { motion, AnimatePresence } from "motion/react";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
+import { getSizeCount } from "../../../utils/productHelpers";
 import { useCart } from "../../../contexts/CartContext";
 import { useNavigate } from "react-router";
 
@@ -175,7 +176,19 @@ export function ProductDetailModal({
                       Price
                     </p>
                     <p className="text-xl md:text-4xl lg:text-6xl font-extralight text-white tracking-wide md:tracking-wider">
-                      {product.price.replace(/[$€₺£¥₽]+$/g, "").trim()}{" "}
+                      {(() => {
+                        const unitPrice =
+                          parseFloat(
+                            product.price
+                              .replace(/[^0-9.,]/g, "")
+                              .replace(",", "."),
+                          ) || 0;
+                        const total =
+                          unitPrice * getSizeCount(product.sizeRange);
+                        return total % 1 === 0
+                          ? total.toString()
+                          : total.toFixed(2);
+                      })()}{" "}
                       {currency}
                     </p>
                   </div>

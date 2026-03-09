@@ -17,6 +17,51 @@
 </head>
 
 <body>
+  <!-- Splash Loading Screen -->
+  <div id="splash-screen" style="
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  ">
+    <div style="position: relative; width: 80px; height: 80px;">
+      <!-- Dönen halka -->
+      <svg viewBox="0 0 80 80" style="
+        position: absolute;
+        inset: 0;
+        animation: splash-spin 1.2s linear infinite;
+      ">
+        <circle cx="40" cy="40" r="36" fill="none" stroke="#e5e7eb" stroke-width="2" />
+        <circle cx="40" cy="40" r="36" fill="none" stroke="#000000" stroke-width="2"
+          stroke-dasharray="80 180" stroke-linecap="round" />
+      </svg>
+      <!-- Ortadaki logo -->
+      <img src="/favicon.ico" alt="" style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        border-radius: 50%;
+      " />
+    </div>
+  </div>
+  <style>
+    @keyframes splash-spin {
+      to { transform: rotate(360deg); }
+    }
+    #splash-screen.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+  </style>
+
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
