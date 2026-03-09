@@ -335,27 +335,25 @@ export function ProductDetailPage() {
 
               {/* Seri beden bilgisi */}
               {sizeCount > 1 && (
-                <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="px-3 py-2.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {getSizeList(displaySizeRange).map((size) => (
-                        <span
-                          key={size}
-                          className="inline-flex items-center justify-center min-w-[32px] px-2 py-0.5 bg-gray-100 text-xs font-medium text-gray-700 rounded"
-                        >
+                <div className="mt-3 inline-flex flex-col border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 flex items-center gap-1.5">
+                    {getSizeList(displaySizeRange).map((size) => (
+                      <div
+                        key={size}
+                        className="flex flex-col items-center gap-0.5"
+                      >
+                        <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-0.5 bg-gray-100 text-xs font-medium text-gray-700 rounded">
                           {size}
                         </span>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-400 whitespace-nowrap">
-                      {sizeCount} ad
-                    </span>
+                        <span className="text-[10px] text-gray-400">1</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="bg-black text-white px-3 py-2 flex items-center justify-between">
-                    <span className="text-xs font-medium uppercase tracking-wider">
+                  <div className="bg-black text-white px-3 py-1.5 flex items-center justify-between">
+                    <span className="text-[10px] font-medium uppercase tracking-wider">
                       Toplam
                     </span>
-                    <span className="text-sm font-bold">
+                    <span className="text-xs font-bold">
                       {(unitPriceVal * sizeCount).toLocaleString(
                         localeMap[language] || "tr-TR",
                         { minimumFractionDigits: 0, maximumFractionDigits: 2 },
