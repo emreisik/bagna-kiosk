@@ -335,26 +335,26 @@ export function ProductDetailPage() {
 
               {/* Seri beden tablosu */}
               {sizeCount > 1 && (
-                <div className="mt-4">
-                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-[0.2em] mb-2">
+                <div className="mt-4 bg-gray-950 rounded-xl p-4 inline-block">
+                  <p className="text-[10px] font-medium text-gray-500 uppercase tracking-[0.25em] mb-3">
                     Seri Fiyatı
                   </p>
-                  <div className="inline-flex items-center gap-1.5">
+                  <div className="flex items-end gap-2">
                     {getSizeList(displaySizeRange).map((size) => (
                       <div
                         key={size}
-                        className="flex flex-col items-center gap-1"
+                        className="flex flex-col items-center gap-1.5"
                       >
-                        <span className="w-9 h-9 flex items-center justify-center rounded-md bg-gray-100 text-[11px] font-semibold text-gray-800">
+                        <span className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white border border-white/10">
                           {size}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-medium">
-                          1
+                        <span className="text-[10px] text-gray-500 font-medium">
+                          1 ad
                         </span>
                       </div>
                     ))}
-                    <div className="flex flex-col items-center gap-1 ml-1">
-                      <span className="h-9 flex items-center justify-center rounded-md bg-black text-white text-[11px] font-bold px-3 tracking-wide">
+                    <div className="flex flex-col items-center gap-1.5 ml-2 pl-3 border-l border-white/10">
+                      <span className="text-lg font-bold text-white tracking-wide">
                         {(unitPriceVal * sizeCount).toLocaleString(
                           localeMap[language] || "tr-TR",
                           {
@@ -362,9 +362,11 @@ export function ProductDetailPage() {
                             maximumFractionDigits: 2,
                           },
                         )}{" "}
-                        {currency}
+                        <span className="text-xs font-normal text-gray-400">
+                          {currency}
+                        </span>
                       </span>
-                      <span className="text-[10px] text-gray-400 font-medium">
+                      <span className="text-[10px] text-gray-500 font-medium">
                         toplam
                       </span>
                     </div>
