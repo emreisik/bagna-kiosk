@@ -142,9 +142,16 @@ export function ProductDetailPage() {
   // Parse price for display - seri beden çarpanı uygulanır
   const priceNumeric = displayPrice.replace(/[^0-9.,]/g, "").replace(",", ".");
   const unitPriceVal = parseFloat(priceNumeric) || 0;
-  const seriesTotalPrice = unitPriceVal * getSizeCount(displaySizeRange);
+  const sizeCount = getSizeCount(displaySizeRange);
+  const seriesTotalPrice = unitPriceVal * sizeCount;
   const priceFormatted = seriesTotalPrice
     ? seriesTotalPrice.toLocaleString(localeMap[language] || "tr-TR", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })
+    : priceNumeric;
+  const unitPriceFormatted = unitPriceVal
+    ? unitPriceVal.toLocaleString(localeMap[language] || "tr-TR", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       })
@@ -327,11 +334,22 @@ export function ProductDetailPage() {
               {product.title}
             </h1>
 
-            {/* Fiyat */}
+            {/* Fiyat + Seri bilgisi */}
             <div className="mb-6 pb-6 border-b border-gray-100">
               <p className="text-2xl md:text-3xl font-bold text-black">
                 {priceFormatted} {currency}
               </p>
+              {sizeCount > 1 && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="inline-flex items-center text-[11px] font-bold bg-black text-white px-2.5 py-1 rounded-full tracking-wide">
+                    SERİ {sizeCount} ADET
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {unitPriceFormatted}
+                    {currency} × {sizeCount} ad
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Varyant Secimi */}

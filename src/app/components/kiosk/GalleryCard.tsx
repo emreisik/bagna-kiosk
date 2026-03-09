@@ -27,6 +27,8 @@ export function GalleryCard({
   const priceNumber =
     seriesPrice % 1 === 0 ? seriesPrice.toString() : seriesPrice.toFixed(2);
 
+  const sizeCount = getSizeCount(product.sizeRange);
+
   const productInfo = showInfo && (
     <div
       className={cn(
@@ -40,6 +42,14 @@ export function GalleryCard({
         <span className="font-normal">{product.productCode}</span>
         <span className="text-gray-400">•</span>
         <span className="font-normal">{product.sizeRange}</span>
+        {sizeCount > 1 && (
+          <>
+            <span className="text-gray-400">•</span>
+            <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
+              {sizeCount} AD
+            </span>
+          </>
+        )}
         <span className="text-gray-400">•</span>
         <span className="font-semibold">
           {priceNumber}

@@ -5,6 +5,7 @@ import { useCart, getCartKey } from "../../../contexts/CartContext";
 import { useI18n } from "../../../contexts/I18nContext";
 import { useCurrency } from "../../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
+import { getSizeCount } from "../../../utils/productHelpers";
 
 const localeMap: Record<string, string> = {
   tr: "tr-TR",
@@ -38,9 +39,12 @@ export function CartSidebar() {
   const { t, language } = useI18n();
   const currency = useCurrency();
 
+  // Seri beden carpani uygulanmis toplam
   const subtotal = items.reduce((sum, item) => {
     const priceStr = item.selectedVariant?.price || item.product.price;
-    return sum + parsePrice(priceStr) * item.quantity;
+    const sizeRange = item.selectedVariant?.sizeRange || item.product.sizeRange;
+    const basePrice = parsePrice(priceStr);
+    return sum + basePrice * getSizeCount(sizeRange) * item.quantity;
   }, 0);
 
   const handleCheckout = () => {
@@ -106,11 +110,13 @@ export function CartSidebar() {
                     const cartKey = getCartKey(item);
                     const priceStr =
                       item.selectedVariant?.price || item.product.price;
-                    const unitPrice = parsePrice(priceStr);
-                    const itemTotal = unitPrice * item.quantity;
                     const displaySizeRange =
                       item.selectedVariant?.sizeRange || item.product.sizeRange;
                     const displayColor = item.selectedVariant?.color;
+                    const baseUnitPrice = parsePrice(priceStr);
+                    const sizeCount = getSizeCount(displaySizeRange);
+                    const seriesTotal = baseUnitPrice * sizeCount;
+                    const itemTotal = seriesTotal * item.quantity;
 
                     return (
                       <motion.div
@@ -120,14 +126,22 @@ export function CartSidebar() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: 50 }}
                         transition={{ duration: 0.2 }}
-                        className="flex gap-3"
+                        className="flex gap-3 pb-4 border-b border-gray-50 last:border-0"
                       >
                         {/* Image */}
-                        <img
-                          src={normalizeImageUrl(item.product.imageUrl)}
-                          alt={item.product.title}
-                          className="w-20 h-24 object-cover rounded-lg flex-shrink-0"
-                        />
+                        <div className="relative flex-shrink-0">
+                          <img
+                            src={normalizeImageUrl(item.product.imageUrl)}
+                            alt={item.product.title}
+                            className="w-20 h-24 object-cover rounded-lg"
+                          />
+                          {/* Seri Badge - gorsel uzerinde */}
+                          {sizeCount > 1 && (
+                            <div className="absolute -top-1.5 -right-1.5 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-tight">
+                              {sizeCount} AD
+                            </div>
+                          )}
+                        </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
@@ -139,14 +153,6 @@ export function CartSidebar() {
                               <p className="text-xs text-gray-400 font-light">
                                 {item.product.productCode}
                               </p>
-                              <p className="text-xs text-gray-400 font-light">
-                                {t("product.size")}: {displaySizeRange}
-                              </p>
-                              {displayColor && (
-                                <p className="text-xs text-gray-400 font-light">
-                                  {t("product.color")}: {displayColor}
-                                </p>
-                              )}
                             </div>
                             <button
                               onClick={() => removeItem(cartKey)}
@@ -155,6 +161,33 @@ export function CartSidebar() {
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
+
+                          {/* Beden + Renk + Seri bilgisi */}
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                              {displaySizeRange}
+                            </span>
+                            {displayColor && (
+                              <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                {displayColor}
+                              </span>
+                            )}
+                            {sizeCount > 1 && (
+                              <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
+                                SERİ {sizeCount} Adet
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Seri fiyat kirilimi */}
+                          {sizeCount > 1 && (
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              {formatPrice(baseUnitPrice, language)}
+                              {currency} × {sizeCount} ad ={" "}
+                              {formatPrice(seriesTotal, language)}
+                              {currency}
+                            </p>
+                          )}
 
                           <div className="flex items-center justify-between mt-2">
                             {/* Quantity */}

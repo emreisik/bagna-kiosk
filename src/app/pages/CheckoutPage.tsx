@@ -289,6 +289,10 @@ export function CheckoutPage() {
                 const displaySizeRange =
                   item.selectedVariant?.sizeRange || item.product.sizeRange;
                 const displayColor = item.selectedVariant?.color;
+                const sizeCount = getSizeCount(displaySizeRange);
+                const basePrice = parsePrice(
+                  item.selectedVariant?.price || item.product.price,
+                );
                 return (
                   <motion.div
                     key={cartKey}
@@ -322,12 +326,27 @@ export function CheckoutPage() {
                           <p className="text-xs text-gray-400 font-light mb-0.5">
                             {item.product.productCode}
                           </p>
-                          <p className="text-xs text-gray-400 font-light">
-                            {t("product.size")}: {displaySizeRange}
-                          </p>
-                          {displayColor && (
-                            <p className="text-xs text-gray-400 font-light">
-                              {t("product.color")}: {displayColor}
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                              {displaySizeRange}
+                            </span>
+                            {displayColor && (
+                              <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                {displayColor}
+                              </span>
+                            )}
+                            {sizeCount > 1 && (
+                              <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
+                                SERİ {sizeCount} Ad
+                              </span>
+                            )}
+                          </div>
+                          {sizeCount > 1 && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {formatPrice(basePrice, language)}
+                              {currency} × {sizeCount} ad ={" "}
+                              {formatPrice(unitPrice, language)}
+                              {currency}
                             </p>
                           )}
                           <div className="flex items-center justify-between mt-3">
@@ -378,12 +397,27 @@ export function CheckoutPage() {
                           <p className="text-xs text-gray-400 font-light">
                             {item.product.productCode}
                           </p>
-                          <p className="text-xs text-gray-400 font-light">
-                            {t("product.size")}: {displaySizeRange}
-                          </p>
-                          {displayColor && (
-                            <p className="text-xs text-gray-400 font-light">
-                              {t("product.color")}: {displayColor}
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                              {displaySizeRange}
+                            </span>
+                            {displayColor && (
+                              <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                {displayColor}
+                              </span>
+                            )}
+                            {sizeCount > 1 && (
+                              <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
+                                SERİ {sizeCount} Ad
+                              </span>
+                            )}
+                          </div>
+                          {sizeCount > 1 && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {formatPrice(basePrice, language)}
+                              {currency} × {sizeCount} ad ={" "}
+                              {formatPrice(unitPrice, language)}
+                              {currency}
                             </p>
                           )}
                           <button
