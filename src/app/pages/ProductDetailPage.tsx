@@ -335,49 +335,40 @@ export function ProductDetailPage() {
 
               {/* Seri beden tablosu */}
               {sizeCount > 1 && (
-                <div className="mt-4 inline-block">
-                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.15em] mb-1.5">
+                <div className="mt-4">
+                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-[0.2em] mb-2">
                     Seri Fiyatı
                   </p>
-                  <table className="border-collapse text-center">
-                    <thead>
-                      <tr>
-                        {getSizeList(displaySizeRange).map((size) => (
-                          <th
-                            key={size}
-                            className="border border-gray-300 px-2.5 py-1 text-[11px] font-semibold text-gray-900 bg-gray-50"
-                          >
-                            {size}
-                          </th>
-                        ))}
-                        <th className="border border-gray-900 px-3 py-1 text-[11px] font-semibold text-white bg-gray-900">
-                          Toplam
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        {getSizeList(displaySizeRange).map((size) => (
-                          <td
-                            key={size}
-                            className="border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700"
-                          >
-                            1
-                          </td>
-                        ))}
-                        <td className="border border-gray-900 px-3 py-1 text-xs font-bold text-white bg-gray-900">
-                          {(unitPriceVal * sizeCount).toLocaleString(
-                            localeMap[language] || "tr-TR",
-                            {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2,
-                            },
-                          )}{" "}
-                          {currency}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="inline-flex items-center gap-1.5">
+                    {getSizeList(displaySizeRange).map((size) => (
+                      <div
+                        key={size}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <span className="w-9 h-9 flex items-center justify-center rounded-md bg-gray-100 text-[11px] font-semibold text-gray-800">
+                          {size}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          1
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex flex-col items-center gap-1 ml-1">
+                      <span className="h-9 flex items-center justify-center rounded-md bg-black text-white text-[11px] font-bold px-3 tracking-wide">
+                        {(unitPriceVal * sizeCount).toLocaleString(
+                          localeMap[language] || "tr-TR",
+                          {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          },
+                        )}{" "}
+                        {currency}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        toplam
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
