@@ -175,36 +175,15 @@ export function ProductDetailModal({
                     )}
                   </div>
 
-                  {/* Right: Price - Premium Black */}
+                  {/* Right: Price - Birim fiyat */}
                   <div className="flex-1 px-2 py-2 md:px-6 md:py-4 lg:px-10 lg:py-6 bg-black flex flex-col justify-center items-center min-w-0">
                     <p className="text-[9px] md:text-xs font-light text-white/60 tracking-[0.1em] md:tracking-[0.2em] mb-0.5 md:mb-2 uppercase">
                       Price
                     </p>
-                    {(() => {
-                      const unitPriceVal =
-                        parseFloat(
-                          product.price
-                            .replace(/[^0-9.,]/g, "")
-                            .replace(",", "."),
-                        ) || 0;
-                      const sizeCount = getSizeCount(product.sizeRange);
-                      const total = unitPriceVal * sizeCount;
-                      const totalStr =
-                        total % 1 === 0 ? total.toString() : total.toFixed(2);
-                      return (
-                        <>
-                          <p className="text-xl md:text-4xl lg:text-6xl font-extralight text-white tracking-wide md:tracking-wider">
-                            {totalStr} {currency}
-                          </p>
-                          {sizeCount > 1 && (
-                            <p className="text-[8px] md:text-[10px] lg:text-xs text-white/50 mt-0.5 md:mt-1 font-light">
-                              {unitPriceVal}
-                              {currency} × {sizeCount} ad
-                            </p>
-                          )}
-                        </>
-                      );
-                    })()}
+                    <p className="text-xl md:text-4xl lg:text-6xl font-extralight text-white tracking-wide md:tracking-wider">
+                      {product.price.replace(/[$€₺£¥₽]+$/g, "").trim()}{" "}
+                      {currency}
+                    </p>
                   </div>
 
                   {/* Add to Cart Button */}

@@ -20,13 +20,8 @@ export function GalleryCard({
   infoPosition = "below",
   currency = "$",
 }: GalleryCardProps) {
-  // Parse price to extract number (remove currency symbols) and multiply by size count
-  const unitPrice =
-    parseFloat(product.price.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
-  const seriesPrice = unitPrice * getSizeCount(product.sizeRange);
-  const priceNumber =
-    seriesPrice % 1 === 0 ? seriesPrice.toString() : seriesPrice.toFixed(2);
-
+  // Birim fiyat gosterilir - seri toplam sadece sepette hesaplanir
+  const priceNumber = product.price.replace(/[^0-9.,]/g, "");
   const sizeCount = getSizeCount(product.sizeRange);
 
   const productInfo = showInfo && (
