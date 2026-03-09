@@ -4,6 +4,7 @@ import { ShoppingBag, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useProduct } from "../../hooks/useProducts";
 import { useCart } from "../../contexts/CartContext";
 import { useI18n } from "../../contexts/I18nContext";
+import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import { getSizeCount, getSizeList } from "../../utils/productHelpers";
@@ -25,6 +26,7 @@ export function ProductDetailPage() {
   const { addItem, openCart } = useCart();
   const { t, language } = useI18n();
   const { data: product, isLoading } = useProduct(productId);
+  const { data: settings } = useSettings();
   const currency = useCurrency();
 
   // Image gallery state
@@ -360,7 +362,11 @@ export function ProductDetailPage() {
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                           }`}
                         >
-                          {translateColor(color, t)}
+                          {translateColor(
+                            color,
+                            language,
+                            settings?.color_translations,
+                          )}
                         </button>
                       ))}
                     </div>

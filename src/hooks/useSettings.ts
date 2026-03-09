@@ -18,6 +18,7 @@ interface Settings {
   product_info_position: "overlay" | "below"; // Bilgi pozisyonu: görsel üzerinde veya altında
   logo_width: number; // Logo genişliği (px)
   cache_version: string; // Cache version timestamp
+  color_translations: Record<string, Record<string, string>>; // DB'den gelen renk cevirileri
 }
 
 export function useSettings() {
@@ -56,6 +57,9 @@ export function useSettings() {
           ? parseInt(settingsObj.logo_width)
           : 144,
         cache_version: settingsObj.cache_version || "0",
+        color_translations: settingsObj.color_translations
+          ? JSON.parse(settingsObj.color_translations)
+          : {},
       };
     },
     staleTime: 1000 * 60 * 5, // 5 dakika (daha kısa tuttuk)

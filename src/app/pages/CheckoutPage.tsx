@@ -6,6 +6,7 @@ import { useCart, getCartKey } from "../../contexts/CartContext";
 import { useI18n } from "../../contexts/I18nContext";
 import { useCreateOrder } from "../../hooks/useOrders";
 import { useCurrency } from "../../hooks/useCurrency";
+import { useSettings } from "../../hooks/useSettings";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import { getSizeCount } from "../../utils/productHelpers";
 import { translateColor } from "../../utils/translateColor";
@@ -95,6 +96,7 @@ export function CheckoutPage() {
   const { items, removeItem, updateQuantity, clearCart } = useCart();
   const { t, language } = useI18n();
   const currency = useCurrency();
+  const { data: settings } = useSettings();
   const createOrder = useCreateOrder();
   const [countryCode, setCountryCode] = useState("+90");
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
@@ -309,7 +311,11 @@ export function CheckoutPage() {
                             </span>
                             {displayColor && (
                               <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                {translateColor(displayColor, t)}
+                                {translateColor(
+                                  displayColor,
+                                  language,
+                                  settings?.color_translations,
+                                )}
                               </span>
                             )}
                             {sizeCount > 1 && (
@@ -383,7 +389,11 @@ export function CheckoutPage() {
                             </span>
                             {displayColor && (
                               <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                {translateColor(displayColor, t)}
+                                {translateColor(
+                                  displayColor,
+                                  language,
+                                  settings?.color_translations,
+                                )}
                               </span>
                             )}
                             {sizeCount > 1 && (
@@ -469,7 +479,7 @@ export function CheckoutPage() {
                 {items.map((item, index) => {
                   const { itemTotal } = cartCalculations.itemSubtotals[index];
                   const colorLabel = item.selectedVariant?.color
-                    ? ` (${translateColor(item.selectedVariant.color, t)})`
+                    ? ` (${translateColor(item.selectedVariant.color, language, settings?.color_translations)})`
                     : "";
                   return (
                     <div

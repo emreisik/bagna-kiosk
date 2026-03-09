@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useCart, getCartKey } from "../../../contexts/CartContext";
 import { useI18n } from "../../../contexts/I18nContext";
 import { useCurrency } from "../../../hooks/useCurrency";
+import { useSettings } from "../../../hooks/useSettings";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
 import { getSizeCount } from "../../../utils/productHelpers";
 import { translateColor } from "../../../utils/translateColor";
@@ -39,6 +40,7 @@ export function CartSidebar() {
   } = useCart();
   const { t, language } = useI18n();
   const currency = useCurrency();
+  const { data: settings } = useSettings();
 
   // Seri beden carpani uygulanmis toplam
   const subtotal = items.reduce((sum, item) => {
@@ -173,7 +175,11 @@ export function CartSidebar() {
                             </span>
                             {displayColor && (
                               <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                {translateColor(displayColor, t)}
+                                {translateColor(
+                                  displayColor,
+                                  language,
+                                  settings?.color_translations,
+                                )}
                               </span>
                             )}
                             {sizeCount > 1 && (
