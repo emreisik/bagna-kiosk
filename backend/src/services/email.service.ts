@@ -47,6 +47,8 @@ const emailTranslations: Record<string, Record<string, string>> = {
       "Siparisiniz basariyla alindi. Asagida siparis detaylarinizi bulabilirsiniz.",
     subjectNewOrder: "Yeni Siparis",
     subjectOrderConfirmed: "Siparisiniz Alindi",
+    pcs: "ad",
+    series: "Seri",
   },
   en: {
     newOrder: "NEW ORDER",
@@ -67,6 +69,8 @@ const emailTranslations: Record<string, Record<string, string>> = {
       "Your order has been successfully received. You can find your order details below.",
     subjectNewOrder: "New Order",
     subjectOrderConfirmed: "Your Order Has Been Received",
+    pcs: "pcs",
+    series: "Series",
   },
   ru: {
     newOrder: "НОВЫЙ ЗАКАЗ",
@@ -87,6 +91,8 @@ const emailTranslations: Record<string, Record<string, string>> = {
       "Ваш заказ успешно принят. Ниже вы найдете детали вашего заказа.",
     subjectNewOrder: "Новый заказ",
     subjectOrderConfirmed: "Ваш заказ принят",
+    pcs: "шт",
+    series: "Серия",
   },
 };
 
@@ -104,6 +110,13 @@ function parsePrice(priceStr: string): number {
   return parseFloat(priceStr.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
 }
 
+function formatPrice(amount: number, lang: string): string {
+  return amount.toLocaleString(localeMap[lang] || "tr-TR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
 function formatDate(date: Date, lang: string): string {
   return date.toLocaleDateString(localeMap[lang] || "tr-TR", {
     day: "2-digit",
@@ -114,45 +127,121 @@ function formatDate(date: Date, lang: string): string {
   });
 }
 
+/** Harf bedenleri sira haritasi */
+const letterSizeOrder: Record<string, number> = {
+  XS: 1,
+  S: 2,
+  M: 3,
+  L: 4,
+  XL: 5,
+  XXL: 6,
+  "2XL": 6,
+  "3XL": 7,
+  XXXL: 7,
+};
+
+/**
+ * Seri beden araligından beden sayisini hesapla
+ * "36-42" → 4, "S-XL" → 4, "42" → 1
+ */
+function getSizeCount(sizeRange: string): number {
+  if (!sizeRange) return 1;
+  const parts = sizeRange.split("-").map((s) => s.trim());
+  if (parts.length !== 2) return 1;
+
+  const [startStr, endStr] = parts;
+
+  const startNum = parseInt(startStr);
+  const endNum = parseInt(endStr);
+  if (!isNaN(startNum) && !isNaN(endNum) && endNum >= startNum) {
+    return (endNum - startNum) / 2 + 1;
+  }
+
+  const startOrder = letterSizeOrder[startStr.toUpperCase()];
+  const endOrder = letterSizeOrder[endStr.toUpperCase()];
+  if (
+    startOrder !== undefined &&
+    endOrder !== undefined &&
+    endOrder >= startOrder
+  ) {
+    return endOrder - startOrder + 1;
+  }
+
+  return 1;
+}
+
+/**
+ * Gorsel URL'ini email icin absolute URL'e cevir
+ * Cloudinary URL'leri zaten absolute, relative path'ler FRONTEND_URL ile birlesitirilir
+ */
+function resolveImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (config.FRONTEND_URL) return `${config.FRONTEND_URL}${url}`;
+  return "";
+}
+
 function buildOrderEmailHtml(
   order: OrderWithItems,
   siteName: string,
   siteLogo: string | null,
+  currency: string,
   lang: string,
 ): string {
   const t = getT(lang);
-  const locale = localeMap[lang] || "tr-TR";
+  const resolvedLogo = resolveImageUrl(siteLogo);
+
   const totalAmount = order.items.reduce(
-    (sum, item) => sum + parsePrice(item.price) * item.quantity,
+    (sum, item) =>
+      sum +
+      parsePrice(item.price) * getSizeCount(item.sizeRange) * item.quantity,
     0,
   );
 
   const itemRows = order.items
-    .map(
-      (item) => `
+    .map((item) => {
+      const unitPrice = parsePrice(item.price);
+      const sizeCount = getSizeCount(item.sizeRange);
+      const seriesPrice = unitPrice * sizeCount;
+      const lineTotal = seriesPrice * item.quantity;
+      const imgUrl = resolveImageUrl(item.imageUrl);
+
+      const imageCell = imgUrl
+        ? `<td style="padding: 12px 8px 12px 0; border-bottom: 1px solid #f0f0f0; vertical-align: top; width: 60px;">
+            <img src="${imgUrl}" alt="${item.title}" style="width: 60px; height: 72px; object-fit: cover; border-radius: 6px; display: block;" />
+          </td>`
+        : "";
+
+      const seriesInfo =
+        sizeCount > 1
+          ? `<br/><span style="color: #888; font-size: 11px;">${t.series}: ${formatPrice(unitPrice, lang)} ${currency} &times; ${sizeCount} ${t.pcs} = ${formatPrice(seriesPrice, lang)} ${currency}</span>`
+          : "";
+
+      return `
       <tr>
-        <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">
-          <strong style="color: #111;">${item.title}</strong><br/>
-          <span style="color: #888; font-size: 12px;">${item.productCode}</span>
+        ${imageCell}
+        <td style="padding: 12px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top;">
+          <strong style="color: #111; font-size: 13px;">${item.title}</strong><br/>
+          <span style="color: #888; font-size: 11px;">${item.productCode}</span>
+          <div style="margin-top: 4px;">
+            <span style="display: inline-block; background: #f3f3f3; color: #555; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;">${item.sizeRange}</span>
+            ${item.color ? `<span style="display: inline-block; background: #f3f3f3; color: #555; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">${item.color}</span>` : ""}
+            ${sizeCount > 1 ? `<span style="display: inline-block; background: #111; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">${sizeCount} ${t.pcs}</span>` : ""}
+          </div>
+          ${seriesInfo}
         </td>
-        <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center;">
-          ${item.sizeRange}
+        <td style="padding: 12px 8px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center; vertical-align: top; font-size: 13px; white-space: nowrap;">
+          x${item.quantity}
         </td>
-        <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center;">
-          ${item.color || "\u2014"}
+        <td style="padding: 12px 0 12px 8px; border-bottom: 1px solid #f0f0f0; color: #111; font-weight: 600; text-align: right; vertical-align: top; font-size: 13px; white-space: nowrap;">
+          ${formatPrice(lineTotal, lang)} ${currency}
         </td>
-        <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center;">
-          ${item.quantity}
-        </td>
-        <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #111; font-weight: 600; text-align: right;">
-          ${item.price}
-        </td>
-      </tr>`,
-    )
+      </tr>`;
+    })
     .join("");
 
-  const logoHtml = siteLogo
-    ? `<img src="${siteLogo}" alt="${siteName}" style="max-width: 160px; height: auto; margin-bottom: 16px;" />`
+  const logoHtml = resolvedLogo
+    ? `<img src="${resolvedLogo}" alt="${siteName}" style="max-width: 160px; height: auto; margin-bottom: 16px;" />`
     : `<h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: #111;">${siteName}</h1>`;
 
   return `
@@ -200,15 +289,6 @@ function buildOrderEmailHtml(
         ${t.orderDetails}
       </h3>
       <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-        <thead>
-          <tr style="border-bottom: 2px solid #111;">
-            <th style="padding: 8px 16px; text-align: left; font-weight: 600; color: #555;">${t.product}</th>
-            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">${t.size}</th>
-            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">${t.color}</th>
-            <th style="padding: 8px 16px; text-align: center; font-weight: 600; color: #555;">${t.quantity}</th>
-            <th style="padding: 8px 16px; text-align: right; font-weight: 600; color: #555;">${t.price}</th>
-          </tr>
-        </thead>
         <tbody>
           ${itemRows}
         </tbody>
@@ -219,7 +299,7 @@ function buildOrderEmailHtml(
     <div style="background-color: #111; border-radius: 0 0 12px 12px; padding: 24px 32px; text-align: right;">
       <span style="color: #888; font-size: 14px; margin-right: 16px;">${t.total}</span>
       <span style="color: #fff; font-size: 24px; font-weight: 700;">
-        ${totalAmount.toLocaleString(locale)} $
+        ${formatPrice(totalAmount, lang)} ${currency}
       </span>
     </div>
 
@@ -245,10 +325,12 @@ export async function sendOrderNotification(
 
   const t = getT(lang);
 
-  // Settings'ten bildirim emaili ve site bilgilerini al
+  // Settings'ten bildirim emaili, site bilgileri ve para birimi al
   const settings = await prisma.settings.findMany({
     where: {
-      key: { in: ["notification_email", "site_name", "site_logo"] },
+      key: {
+        in: ["notification_email", "site_name", "site_logo", "currency"],
+      },
     },
   });
 
@@ -273,9 +355,10 @@ export async function sendOrderNotification(
 
   const siteName = settingsMap["site_name"] || "Kiosk QR";
   const siteLogo = settingsMap["site_logo"] || null;
+  const currency = settingsMap["currency"] || "$";
 
   const resend = new Resend(config.RESEND_API_KEY);
-  const html = buildOrderEmailHtml(order, siteName, siteLogo, lang);
+  const html = buildOrderEmailHtml(order, siteName, siteLogo, currency, lang);
 
   const { error } = await resend.emails.send({
     from: `${siteName} <${config.RESEND_FROM_EMAIL}>`,
@@ -297,35 +380,58 @@ function buildCustomerConfirmationHtml(
   order: OrderWithItems,
   siteName: string,
   siteLogo: string | null,
+  currency: string,
   lang: string,
 ): string {
   const t = getT(lang);
-  const locale = localeMap[lang] || "tr-TR";
+  const resolvedLogo = resolveImageUrl(siteLogo);
+
   const totalAmount = order.items.reduce(
-    (sum, item) => sum + parsePrice(item.price) * item.quantity,
+    (sum, item) =>
+      sum +
+      parsePrice(item.price) * getSizeCount(item.sizeRange) * item.quantity,
     0,
   );
 
   const itemRows = order.items
-    .map(
-      (item) => `
+    .map((item) => {
+      const unitPrice = parsePrice(item.price);
+      const sizeCount = getSizeCount(item.sizeRange);
+      const seriesPrice = unitPrice * sizeCount;
+      const lineTotal = seriesPrice * item.quantity;
+      const imgUrl = resolveImageUrl(item.imageUrl);
+
+      const imageCell = imgUrl
+        ? `<td style="padding: 10px 8px 10px 0; border-bottom: 1px solid #f0f0f0; vertical-align: top; width: 50px;">
+            <img src="${imgUrl}" alt="${item.title}" style="width: 50px; height: 60px; object-fit: cover; border-radius: 6px; display: block;" />
+          </td>`
+        : "";
+
+      const seriesInfo =
+        sizeCount > 1
+          ? `<br/><span style="color: #999; font-size: 10px;">${formatPrice(unitPrice, lang)} ${currency} &times; ${sizeCount} ${t.pcs}</span>`
+          : "";
+
+      return `
       <tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0;">
+        ${imageCell}
+        <td style="padding: 10px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top;">
           <strong style="color: #111; font-size: 13px;">${item.title}</strong><br/>
-          <span style="color: #999; font-size: 11px;">${item.productCode} | ${item.sizeRange}${item.color ? ` | ${item.color}` : ""}</span>
+          <span style="color: #999; font-size: 11px;">${item.productCode} | ${item.sizeRange}${item.color ? ` | ${item.color}` : ""}${sizeCount > 1 ? ` | ${sizeCount} ${t.pcs}` : ""}</span>
+          ${seriesInfo}
         </td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center; font-size: 13px;">
+        <td style="padding: 10px 8px; border-bottom: 1px solid #f0f0f0; color: #555; text-align: center; font-size: 13px; vertical-align: top; white-space: nowrap;">
           x${item.quantity}
         </td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #111; font-weight: 600; text-align: right; font-size: 13px;">
-          ${item.price}
+        <td style="padding: 10px 0 10px 8px; border-bottom: 1px solid #f0f0f0; color: #111; font-weight: 600; text-align: right; font-size: 13px; vertical-align: top; white-space: nowrap;">
+          ${formatPrice(lineTotal, lang)} ${currency}
         </td>
-      </tr>`,
-    )
+      </tr>`;
+    })
     .join("");
 
-  const logoHtml = siteLogo
-    ? `<img src="${siteLogo}" alt="${siteName}" style="max-width: 140px; height: auto; margin-bottom: 16px;" />`
+  const logoHtml = resolvedLogo
+    ? `<img src="${resolvedLogo}" alt="${siteName}" style="max-width: 140px; height: auto; margin-bottom: 16px;" />`
     : `<h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #111;">${siteName}</h1>`;
 
   return `
@@ -357,13 +463,6 @@ function buildCustomerConfirmationHtml(
     <!-- Urunler -->
     <div style="background-color: #ffffff; padding: 20px 32px;">
       <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-        <thead>
-          <tr style="border-bottom: 2px solid #eee;">
-            <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">${t.product}</th>
-            <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">${t.quantity}</th>
-            <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #888; font-size: 11px; text-transform: uppercase;">${t.price}</th>
-          </tr>
-        </thead>
         <tbody>
           ${itemRows}
         </tbody>
@@ -371,10 +470,10 @@ function buildCustomerConfirmationHtml(
     </div>
 
     <!-- Toplam -->
-    <div style="background-color: #111; border-radius: 0 0 12px 12px; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center;">
-      <span style="color: #888; font-size: 14px;">${t.total}</span>
-      <span style="color: #fff; font-size: 22px; font-weight: 700; float: right;">
-        ${totalAmount.toLocaleString(locale)} $
+    <div style="background-color: #111; border-radius: 0 0 12px 12px; padding: 20px 32px; text-align: right;">
+      <span style="color: #888; font-size: 14px; margin-right: 16px;">${t.total}</span>
+      <span style="color: #fff; font-size: 22px; font-weight: 700;">
+        ${formatPrice(totalAmount, lang)} ${currency}
       </span>
     </div>
 
@@ -401,16 +500,23 @@ export async function sendCustomerConfirmation(
 
   const settings = await prisma.settings.findMany({
     where: {
-      key: { in: ["site_name", "site_logo"] },
+      key: { in: ["site_name", "site_logo", "currency"] },
     },
   });
 
   const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
   const siteName = settingsMap["site_name"] || "Kiosk QR";
   const siteLogo = settingsMap["site_logo"] || null;
+  const currency = settingsMap["currency"] || "$";
 
   const resend = new Resend(config.RESEND_API_KEY);
-  const html = buildCustomerConfirmationHtml(order, siteName, siteLogo, lang);
+  const html = buildCustomerConfirmationHtml(
+    order,
+    siteName,
+    siteLogo,
+    currency,
+    lang,
+  );
 
   const { error } = await resend.emails.send({
     from: `${siteName} <${config.RESEND_FROM_EMAIL}>`,
