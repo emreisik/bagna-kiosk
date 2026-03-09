@@ -1,16 +1,9 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  ShoppingBag,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useProduct } from "../../hooks/useProducts";
 import { useCart } from "../../contexts/CartContext";
 import { useI18n } from "../../contexts/I18nContext";
-import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import { getSizeCount, getSizeList } from "../../utils/productHelpers";
@@ -28,10 +21,9 @@ export function ProductDetailPage() {
     productId: string;
   }>();
   const navigate = useNavigate();
-  const { addItem, itemCount, openCart } = useCart();
+  const { addItem, openCart } = useCart();
   const { t, language } = useI18n();
   const { data: product, isLoading } = useProduct(productId);
-  const { data: settings } = useSettings();
   const currency = useCurrency();
 
   // Image gallery state
@@ -188,49 +180,6 @@ export function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(`/${brandSlug || ""}`)}
-              className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-light uppercase tracking-wide">
-                {t("back")}
-              </span>
-            </button>
-
-            {settings?.site_logo ? (
-              <img
-                src={normalizeImageUrl(settings.site_logo)}
-                alt={settings?.site_name || ""}
-                style={{ width: Math.min(settings.logo_width || 144, 120) }}
-                className="h-auto object-contain"
-              />
-            ) : (
-              <h1 className="text-lg font-light tracking-[0.2em] text-black uppercase">
-                {settings?.site_name || "Kiosk QR"}
-              </h1>
-            )}
-
-            {/* Cart Icon */}
-            <button
-              onClick={openCart}
-              className="relative p-2 hover:bg-gray-50 rounded-full transition-colors"
-            >
-              <ShoppingBag className="w-5 h-5 text-black" />
-              {itemCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-black text-white rounded-full text-[10px] font-medium flex items-center justify-center">
-                  {itemCount > 99 ? "99+" : itemCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Product Content - Shopify Layout */}
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-10">
         <div className="lg:grid lg:grid-cols-2 lg:gap-12 xl:gap-16">

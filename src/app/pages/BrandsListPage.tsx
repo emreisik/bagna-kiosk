@@ -25,22 +25,6 @@ export function BrandsListPage() {
   return (
     <>
       <div className="min-h-screen bg-white px-4 py-4 md:px-6 lg:px-8 lg:py-6">
-        {/* Header with Logo */}
-        <div className="max-w-[2000px] mx-auto mb-8 md:mb-12 lg:mb-16 flex justify-start md:justify-center">
-          {settings?.site_logo ? (
-            <img
-              src={normalizeImageUrl(settings.site_logo)}
-              alt={settings?.site_name || "Kiosk QR"}
-              style={{ width: settings.logo_width || 144 }}
-              className="h-auto object-contain"
-            />
-          ) : (
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-light tracking-[0.2em] md:tracking-[0.3em] text-black">
-              {settings?.site_name || "Kiosk QR"}
-            </h1>
-          )}
-        </div>
-
         {/* Brands Grid */}
         <div className="max-w-[2000px] mx-auto">
           {isLoading ? (

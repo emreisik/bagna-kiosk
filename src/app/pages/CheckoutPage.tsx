@@ -1,18 +1,10 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
-import {
-  Trash2,
-  Minus,
-  Plus,
-  ArrowLeft,
-  Check,
-  ShoppingBag,
-} from "lucide-react";
+import { Trash2, Minus, Plus, Check, ShoppingBag } from "lucide-react";
 import { useCart, getCartKey } from "../../contexts/CartContext";
 import { useI18n } from "../../contexts/I18nContext";
 import { useCreateOrder } from "../../hooks/useOrders";
-import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import { getSizeCount } from "../../utils/productHelpers";
@@ -101,7 +93,6 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, clearCart } = useCart();
   const { t, language } = useI18n();
-  const { data: settings } = useSettings();
   const currency = useCurrency();
   const createOrder = useCreateOrder();
   const [countryCode, setCountryCode] = useState("+90");
@@ -237,21 +228,6 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - logo ve sepet ikonu yok */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 py-4 md:py-5">
-          <button
-            onClick={() => navigate(`/${brandSlug || ""}`)}
-            className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-light uppercase tracking-wide">
-              {t("checkout.continueShopping")}
-            </span>
-          </button>
-        </div>
-      </div>
-
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-10">
         {/* Baslik */}
         <h1 className="text-2xl md:text-3xl font-light tracking-wide text-black mb-8 md:mb-10">
