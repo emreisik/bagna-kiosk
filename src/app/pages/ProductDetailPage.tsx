@@ -339,21 +339,21 @@ export function ProductDetailPage() {
                   {getSizeList(displaySizeRange).map((size) => (
                     <div
                       key={size}
-                      className="flex flex-col items-center px-3 py-2"
+                      className="flex flex-col items-center divide-y divide-gray-200 px-4 py-0"
                     >
-                      <span className="text-[11px] font-medium text-gray-500">
+                      <span className="text-sm font-medium text-gray-500 py-2">
                         {size}
                       </span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-sm font-semibold text-gray-900 py-2">
                         1
                       </span>
                     </div>
                   ))}
-                  <div className="flex flex-col items-center px-4 py-2 bg-gray-50">
-                    <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                  <div className="flex flex-col items-center divide-y divide-gray-200 px-4 py-0 bg-gray-50">
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wider py-2">
                       Toplam
                     </span>
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold text-gray-900 py-2">
                       {(unitPriceVal * sizeCount).toLocaleString(
                         localeMap[language] || "tr-TR",
                         { minimumFractionDigits: 0, maximumFractionDigits: 2 },
