@@ -14,8 +14,10 @@ interface Settings {
   grid_columns_desktop: string;
   grid_columns_kiosk: string;
   currency: string;
-  show_product_info_on_cards: boolean; // Kart üzerinde ürün bilgisi göster
-  product_info_position: "overlay" | "below"; // Bilgi pozisyonu: görsel üzerinde veya altında
+  show_product_info_mobile: boolean; // Mobilde kart üzerinde ürün bilgisi göster
+  product_info_position_mobile: "overlay" | "below"; // Mobil bilgi pozisyonu
+  show_product_info_desktop: boolean; // Desktop'ta kart üzerinde ürün bilgisi göster
+  product_info_position_desktop: "overlay" | "below"; // Desktop bilgi pozisyonu
   logo_width: number; // Logo genişliği (px)
   cache_version: string; // Cache version timestamp
   color_translations: Record<string, Record<string, string>>; // DB'den gelen renk cevirileri
@@ -49,10 +51,22 @@ export function useSettings() {
         grid_columns_desktop: settingsObj.grid_columns_desktop || "3",
         grid_columns_kiosk: settingsObj.grid_columns_kiosk || "4",
         currency: settingsObj.currency || "$",
-        show_product_info_on_cards:
-          settingsObj.show_product_info_on_cards === "true",
-        product_info_position: (settingsObj.product_info_position ||
-          "below") as "overlay" | "below",
+        show_product_info_mobile:
+          settingsObj.show_product_info_mobile !== undefined
+            ? settingsObj.show_product_info_mobile === "true"
+            : settingsObj.show_product_info_on_cards === "true",
+        product_info_position_mobile:
+          (settingsObj.product_info_position_mobile ||
+            settingsObj.product_info_position ||
+            "below") as "overlay" | "below",
+        show_product_info_desktop:
+          settingsObj.show_product_info_desktop !== undefined
+            ? settingsObj.show_product_info_desktop === "true"
+            : settingsObj.show_product_info_on_cards === "true",
+        product_info_position_desktop:
+          (settingsObj.product_info_position_desktop ||
+            settingsObj.product_info_position ||
+            "below") as "overlay" | "below",
         logo_width: settingsObj.logo_width
           ? parseInt(settingsObj.logo_width)
           : 144,

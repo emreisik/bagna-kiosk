@@ -246,8 +246,14 @@ export function BrandPage() {
               products={filteredProducts}
               onProductClick={handleProductClick}
               showTitles={false}
-              showInfo={settings?.show_product_info_on_cards || false}
-              infoPosition={settings?.product_info_position || "below"}
+              showInfoMobile={settings?.show_product_info_mobile || false}
+              infoPositionMobile={
+                settings?.product_info_position_mobile || "below"
+              }
+              showInfoDesktop={settings?.show_product_info_desktop || false}
+              infoPositionDesktop={
+                settings?.product_info_position_desktop || "below"
+              }
               currency={settings?.currency || "$"}
               columnsMobile={
                 settings?.grid_columns_mobile

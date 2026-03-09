@@ -8,6 +8,7 @@ import {
   Loader2,
   Settings,
   Monitor,
+  Smartphone,
   X,
   Clock,
   Timer,
@@ -31,8 +32,10 @@ export function AdminSettingsPage() {
     grid_columns_tablet: 2,
     grid_columns_desktop: 3,
     grid_columns_kiosk: 3,
-    show_product_info_on_cards: false,
-    product_info_position: "below" as "overlay" | "below",
+    show_product_info_mobile: false,
+    product_info_position_mobile: "below" as "overlay" | "below",
+    show_product_info_desktop: false,
+    product_info_position_desktop: "below" as "overlay" | "below",
     logo_width: 144,
     slideshow_images: [] as string[],
     slideshow_interval: 4000,
@@ -74,10 +77,22 @@ export function AdminSettingsPage() {
         grid_columns_kiosk: settingsObj.grid_columns_kiosk
           ? parseInt(settingsObj.grid_columns_kiosk)
           : 3,
-        show_product_info_on_cards:
-          settingsObj.show_product_info_on_cards === "true",
-        product_info_position: (settingsObj.product_info_position ||
-          "below") as "overlay" | "below",
+        show_product_info_mobile:
+          settingsObj.show_product_info_mobile !== undefined
+            ? settingsObj.show_product_info_mobile === "true"
+            : settingsObj.show_product_info_on_cards === "true",
+        product_info_position_mobile:
+          (settingsObj.product_info_position_mobile ||
+            settingsObj.product_info_position ||
+            "below") as "overlay" | "below",
+        show_product_info_desktop:
+          settingsObj.show_product_info_desktop !== undefined
+            ? settingsObj.show_product_info_desktop === "true"
+            : settingsObj.show_product_info_on_cards === "true",
+        product_info_position_desktop:
+          (settingsObj.product_info_position_desktop ||
+            settingsObj.product_info_position ||
+            "below") as "overlay" | "below",
         logo_width: settingsObj.logo_width
           ? parseInt(settingsObj.logo_width)
           : 144,
@@ -187,13 +202,23 @@ export function AdminSettingsPage() {
         token,
       );
       await apiClient.adminUpsertSetting(
-        "show_product_info_on_cards",
-        settings.show_product_info_on_cards.toString(),
+        "show_product_info_mobile",
+        settings.show_product_info_mobile.toString(),
         token,
       );
       await apiClient.adminUpsertSetting(
-        "product_info_position",
-        settings.product_info_position,
+        "product_info_position_mobile",
+        settings.product_info_position_mobile,
+        token,
+      );
+      await apiClient.adminUpsertSetting(
+        "show_product_info_desktop",
+        settings.show_product_info_desktop.toString(),
+        token,
+      );
+      await apiClient.adminUpsertSetting(
+        "product_info_position_desktop",
+        settings.product_info_position_desktop,
         token,
       );
       await apiClient.adminUpsertSetting(
@@ -627,101 +652,174 @@ export function AdminSettingsPage() {
                 </p>
               </div>
 
-              {/* Kart Üzerinde Ürün Bilgisi */}
+              {/* Kart Üzerinde Ürün Bilgisi — Mobil & Desktop Ayrı */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-base font-semibold text-gray-900 mb-4">
                   Kart Üzerinde Ürün Bilgisi
                 </h3>
+                <p className="text-xs text-gray-500 mb-5">
+                  Mobil ve desktop cihazlar için ürün bilgisi görünümünü ayrı
+                  ayrı ayarlayın.
+                </p>
 
-                <div className="space-y-4">
-                  {/* Toggle */}
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={settings.show_product_info_on_cards}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          show_product_info_on_cards: e.target.checked,
-                        })
-                      }
-                      className="w-5 h-5 text-black border-gray-300 rounded focus:ring-2 focus:ring-black cursor-pointer"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-900 group-hover:text-black transition-colors">
-                        Ürün kartlarında bilgi göster
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Mobil Ayarları */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Smartphone className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-semibold text-gray-800">
+                        Mobil
                       </span>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Ürün kodu, fiyat ve beden bilgilerini kartların
-                        üzerinde/altında minimal olarak gösterir
-                      </p>
+                      <span className="text-[10px] text-gray-400">
+                        &lt;768px
+                      </span>
                     </div>
-                  </label>
 
-                  {/* Position Selector */}
-                  {settings.show_product_info_on_cards && (
-                    <div className="mt-4 pl-8 border-l-2 border-gray-200">
-                      <label className="block text-sm font-medium text-gray-700 mb-3">
-                        Bilgi Pozisyonu
-                      </label>
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-3 cursor-pointer group">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={settings.show_product_info_mobile}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            show_product_info_mobile: e.target.checked,
+                          })
+                        }
+                        className="w-5 h-5 text-black border-gray-300 rounded focus:ring-2 focus:ring-black cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-900 group-hover:text-black transition-colors">
+                        Bilgi göster
+                      </span>
+                    </label>
+
+                    {settings.show_product_info_mobile && (
+                      <div className="mt-3 pl-8 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer group">
                           <input
                             type="radio"
-                            name="product_info_position"
+                            name="product_info_position_mobile"
                             value="below"
-                            checked={settings.product_info_position === "below"}
+                            checked={
+                              settings.product_info_position_mobile === "below"
+                            }
                             onChange={(e) =>
                               setSettings({
                                 ...settings,
-                                product_info_position: e.target.value as
+                                product_info_position_mobile: e.target.value as
                                   | "overlay"
                                   | "below",
                               })
                             }
                             className="w-4 h-4 text-black border-gray-300 focus:ring-2 focus:ring-black cursor-pointer"
                           />
-                          <div>
-                            <span className="text-sm text-gray-900 group-hover:text-black transition-colors">
-                              Görsel Altında
-                            </span>
-                            <p className="text-xs text-gray-500">
-                              Bilgiler görselin altında gösterilir
-                            </p>
-                          </div>
+                          <span className="text-sm text-gray-700">
+                            Görsel Altında
+                          </span>
                         </label>
-
-                        <label className="flex items-center gap-3 cursor-pointer group">
+                        <label className="flex items-center gap-2 cursor-pointer group">
                           <input
                             type="radio"
-                            name="product_info_position"
+                            name="product_info_position_mobile"
                             value="overlay"
                             checked={
-                              settings.product_info_position === "overlay"
+                              settings.product_info_position_mobile ===
+                              "overlay"
                             }
                             onChange={(e) =>
                               setSettings({
                                 ...settings,
-                                product_info_position: e.target.value as
+                                product_info_position_mobile: e.target.value as
                                   | "overlay"
                                   | "below",
                               })
                             }
                             className="w-4 h-4 text-black border-gray-300 focus:ring-2 focus:ring-black cursor-pointer"
                           />
-                          <div>
-                            <span className="text-sm text-gray-900 group-hover:text-black transition-colors">
-                              Görsel Üzerinde
-                            </span>
-                            <p className="text-xs text-gray-500">
-                              Bilgiler görselin alt kısmında gradient ile
-                              gösterilir
-                            </p>
-                          </div>
+                          <span className="text-sm text-gray-700">
+                            Görsel Üzerinde
+                          </span>
                         </label>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Ayarları */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Monitor className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-semibold text-gray-800">
+                        Desktop
+                      </span>
+                      <span className="text-[10px] text-gray-400">
+                        &ge;768px
+                      </span>
                     </div>
-                  )}
+
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={settings.show_product_info_desktop}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            show_product_info_desktop: e.target.checked,
+                          })
+                        }
+                        className="w-5 h-5 text-black border-gray-300 rounded focus:ring-2 focus:ring-black cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-900 group-hover:text-black transition-colors">
+                        Bilgi göster
+                      </span>
+                    </label>
+
+                    {settings.show_product_info_desktop && (
+                      <div className="mt-3 pl-8 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            name="product_info_position_desktop"
+                            value="below"
+                            checked={
+                              settings.product_info_position_desktop === "below"
+                            }
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                product_info_position_desktop: e.target
+                                  .value as "overlay" | "below",
+                              })
+                            }
+                            className="w-4 h-4 text-black border-gray-300 focus:ring-2 focus:ring-black cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700">
+                            Görsel Altında
+                          </span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            name="product_info_position_desktop"
+                            value="overlay"
+                            checked={
+                              settings.product_info_position_desktop ===
+                              "overlay"
+                            }
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                product_info_position_desktop: e.target
+                                  .value as "overlay" | "below",
+                              })
+                            }
+                            className="w-4 h-4 text-black border-gray-300 focus:ring-2 focus:ring-black cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700">
+                            Görsel Üzerinde
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

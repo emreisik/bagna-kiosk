@@ -5,8 +5,10 @@ interface GalleryGridProps {
   products: Product[];
   onProductClick: (product: Product) => void;
   showTitles?: boolean;
-  showInfo?: boolean;
-  infoPosition?: "overlay" | "below";
+  showInfoMobile?: boolean;
+  infoPositionMobile?: "overlay" | "below";
+  showInfoDesktop?: boolean;
+  infoPositionDesktop?: "overlay" | "below";
   currency?: string;
   columnsMobile?: number;
   columnsTablet?: number;
@@ -18,8 +20,10 @@ export function GalleryGrid({
   products,
   onProductClick,
   showTitles = false,
-  showInfo = false,
-  infoPosition = "below",
+  showInfoMobile = false,
+  infoPositionMobile = "below",
+  showInfoDesktop = false,
+  infoPositionDesktop = "below",
   currency = "$",
   columnsMobile = 2,
   columnsTablet = 2,
@@ -84,8 +88,10 @@ export function GalleryGrid({
           product={product}
           onClick={() => onProductClick(product)}
           showTitle={showTitles}
-          showInfo={showInfo}
-          infoPosition={infoPosition}
+          showInfoMobile={showInfoMobile}
+          infoPositionMobile={infoPositionMobile}
+          showInfoDesktop={showInfoDesktop}
+          infoPositionDesktop={infoPositionDesktop}
           currency={currency}
         />
       ))}
