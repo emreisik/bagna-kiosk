@@ -6,6 +6,7 @@ import { useCategories } from "../../hooks/useCategories";
 import { apiClient } from "../../services/api";
 import { X, ArrowLeft, Upload, Loader2, Plus, Trash2 } from "lucide-react";
 import { normalizeImageUrl } from "../../utils/imageUrl";
+import { useSettings } from "../../hooks/useSettings";
 
 export function AdminProductFormPage() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export function AdminProductFormPage() {
   const queryClient = useQueryClient();
 
   const { data: categoriesData } = useCategories();
+  const { data: settings } = useSettings();
   const [brands, setBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -581,6 +583,16 @@ export function AdminProductFormPage() {
                 </button>
               </div>
 
+              {/* Renk secenekleri datalist - DB'deki color_translations'tan */}
+              <datalist id="color-options">
+                {settings?.color_translations &&
+                  Object.entries(settings.color_translations).map(
+                    ([key, translations]) => (
+                      <option key={key} value={translations.tr || key} />
+                    ),
+                  )}
+              </datalist>
+
               {variants.length > 0 && (
                 <div className="space-y-2">
                   {/* Tablo basligi */}
@@ -621,6 +633,7 @@ export function AdminProductFormPage() {
                       <div className="col-span-4">
                         <input
                           type="text"
+                          list="color-options"
                           value={variant.color}
                           onChange={(e) => {
                             const updated = [...variants];
