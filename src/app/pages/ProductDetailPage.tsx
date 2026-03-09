@@ -335,41 +335,31 @@ export function ProductDetailPage() {
 
               {/* Seri beden tablosu */}
               {sizeCount > 1 && (
-                <div className="mt-4 bg-gray-950 rounded-xl p-4 inline-block">
-                  <p className="text-[10px] font-medium text-gray-500 uppercase tracking-[0.25em] mb-3">
-                    Seri Fiyatı
-                  </p>
-                  <div className="flex items-end gap-2">
-                    {getSizeList(displaySizeRange).map((size) => (
-                      <div
-                        key={size}
-                        className="flex flex-col items-center gap-1.5"
-                      >
-                        <span className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white border border-white/10">
-                          {size}
-                        </span>
-                        <span className="text-[10px] text-gray-500 font-medium">
-                          1 ad
-                        </span>
-                      </div>
-                    ))}
-                    <div className="flex flex-col items-center gap-1.5 ml-2 pl-3 border-l border-white/10">
-                      <span className="text-lg font-bold text-white tracking-wide">
-                        {(unitPriceVal * sizeCount).toLocaleString(
-                          localeMap[language] || "tr-TR",
-                          {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 2,
-                          },
-                        )}{" "}
-                        <span className="text-xs font-normal text-gray-400">
-                          {currency}
-                        </span>
+                <div className="mt-4 inline-flex items-stretch border border-gray-200 rounded-lg overflow-hidden divide-x divide-gray-200">
+                  {getSizeList(displaySizeRange).map((size) => (
+                    <div
+                      key={size}
+                      className="flex flex-col items-center px-3 py-2"
+                    >
+                      <span className="text-[11px] font-medium text-gray-500">
+                        {size}
                       </span>
-                      <span className="text-[10px] text-gray-500 font-medium">
-                        toplam
+                      <span className="text-sm font-semibold text-gray-900">
+                        1
                       </span>
                     </div>
+                  ))}
+                  <div className="flex flex-col items-center px-4 py-2 bg-gray-50">
+                    <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                      Toplam
+                    </span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {(unitPriceVal * sizeCount).toLocaleString(
+                        localeMap[language] || "tr-TR",
+                        { minimumFractionDigits: 0, maximumFractionDigits: 2 },
+                      )}{" "}
+                      {currency}
+                    </span>
                   </div>
                 </div>
               )}
