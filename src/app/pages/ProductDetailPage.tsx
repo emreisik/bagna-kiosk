@@ -13,7 +13,7 @@ import { useI18n } from "../../contexts/I18nContext";
 import { useSettings } from "../../hooks/useSettings";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
-import { getSizeCount } from "../../utils/productHelpers";
+import { getSizeCount, getSizeList } from "../../utils/productHelpers";
 import type { ProductVariant } from "../../data/products";
 
 const localeMap: Record<string, string> = {
@@ -332,11 +332,37 @@ export function ProductDetailPage() {
               <p className="text-2xl md:text-3xl font-bold text-black">
                 {priceFormatted} {currency}
               </p>
+
+              {/* Seri beden tablosu */}
               {sizeCount > 1 && (
-                <div className="mt-2">
-                  <span className="inline-flex items-center text-[11px] font-bold bg-black text-white px-2.5 py-1 rounded-full tracking-wide">
-                    SERİ {sizeCount} ADET
-                  </span>
+                <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-black text-white px-3 py-2 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      SERİ {sizeCount} ADET
+                    </span>
+                    <span className="text-sm font-bold">
+                      {(unitPriceVal * sizeCount).toLocaleString(
+                        localeMap[language] || "tr-TR",
+                        { minimumFractionDigits: 0, maximumFractionDigits: 2 },
+                      )}{" "}
+                      {currency}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {getSizeList(displaySizeRange).map((size) => (
+                      <div
+                        key={size}
+                        className="flex items-center justify-between px-3 py-1.5"
+                      >
+                        <span className="text-sm text-gray-700 font-medium">
+                          {size}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          1 ad × {priceFormatted} {currency}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

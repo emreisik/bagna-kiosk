@@ -210,6 +210,62 @@ export function getSeriesPrice(unitPrice: number, sizeRange: string): number {
 }
 
 /**
+ * Harf bedenleri ters haritası (order → label)
+ */
+const orderToLetter: Record<number, string> = {
+  1: "XS",
+  2: "S",
+  3: "M",
+  4: "L",
+  5: "XL",
+  6: "XXL",
+  7: "3XL",
+};
+
+/**
+ * Seri beden aralığından tüm bedenlerin listesini döndür
+ * "36-42" → ["36", "38", "40", "42"]
+ * "S-XL"  → ["S", "M", "L", "XL"]
+ * "42"    → ["42"]
+ */
+export function getSizeList(sizeRange: string): string[] {
+  if (!sizeRange) return [sizeRange || ""];
+
+  const parts = sizeRange.split("-").map((s) => s.trim());
+  if (parts.length !== 2) return [sizeRange];
+
+  const [startStr, endStr] = parts;
+
+  // Sayısal: "36-42"
+  const startNum = parseInt(startStr);
+  const endNum = parseInt(endStr);
+  if (!isNaN(startNum) && !isNaN(endNum) && endNum >= startNum) {
+    const sizes: string[] = [];
+    for (let i = startNum; i <= endNum; i += 2) {
+      sizes.push(i.toString());
+    }
+    return sizes;
+  }
+
+  // Harf: "S-XL"
+  const startOrder = letterSizeOrder[startStr.toUpperCase()];
+  const endOrder = letterSizeOrder[endStr.toUpperCase()];
+  if (
+    startOrder !== undefined &&
+    endOrder !== undefined &&
+    endOrder >= startOrder
+  ) {
+    const sizes: string[] = [];
+    for (let i = startOrder; i <= endOrder; i++) {
+      sizes.push(orderToLetter[i] || i.toString());
+    }
+    return sizes;
+  }
+
+  return [sizeRange];
+}
+
+/**
  * Filter products with multiple criteria
  */
 export interface FilterCriteria {
