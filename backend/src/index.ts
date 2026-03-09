@@ -1,82 +1,41 @@
 import { createApp } from "./app.js";
 import { config } from "./config/env.js";
 import { prisma } from "./config/database.js";
+import {
+  defaultTranslationsPayload,
+  defaultColorTranslations,
+} from "./data/defaultTranslations.js";
 
-// Varsayilan renk cevirilerini DB'ye yaz (yoksa)
+// Varsayilan settings'leri DB'ye yaz (yoksa olustur, varsa eksik key'leri merge et)
 async function seedDefaultSettings() {
-  const existing = await prisma.settings.findUnique({
+  // 1. Ceviriler (translations)
+  const existingTranslations = await prisma.settings.findUnique({
+    where: { key: "translations" },
+  });
+  if (!existingTranslations) {
+    await prisma.settings.create({
+      data: {
+        key: "translations",
+        value: JSON.stringify(defaultTranslationsPayload),
+      },
+    });
+    console.log(
+      `🌐 ${Object.keys(defaultTranslationsPayload.data).length} ceviri key'i yazildi`,
+    );
+  }
+
+  // 2. Renk cevirileri (color_translations)
+  const existingColors = await prisma.settings.findUnique({
     where: { key: "color_translations" },
   });
-  const colorTranslations: Record<string, Record<string, string>> = {
-    siyah: { tr: "Siyah", en: "Black", ru: "Чёрный" },
-    beyaz: { tr: "Beyaz", en: "White", ru: "Белый" },
-    kirmizi: { tr: "Kırmızı", en: "Red", ru: "Красный" },
-    mavi: { tr: "Mavi", en: "Blue", ru: "Синий" },
-    yesil: { tr: "Yeşil", en: "Green", ru: "Зелёный" },
-    sari: { tr: "Sarı", en: "Yellow", ru: "Жёлтый" },
-    turuncu: { tr: "Turuncu", en: "Orange", ru: "Оранжевый" },
-    mor: { tr: "Mor", en: "Purple", ru: "Фиолетовый" },
-    pembe: { tr: "Pembe", en: "Pink", ru: "Розовый" },
-    gri: { tr: "Gri", en: "Gray", ru: "Серый" },
-    kahverengi: { tr: "Kahverengi", en: "Brown", ru: "Коричневый" },
-    bej: { tr: "Bej", en: "Beige", ru: "Бежевый" },
-    lacivert: { tr: "Lacivert", en: "Navy", ru: "Тёмно-синий" },
-    bordo: { tr: "Bordo", en: "Burgundy", ru: "Бордовый" },
-    ekru: { tr: "Ekru", en: "Ecru", ru: "Экрю" },
-    krem: { tr: "Krem", en: "Cream", ru: "Кремовый" },
-    "koyu yesil": { tr: "Koyu Yeşil", en: "Dark Green", ru: "Тёмно-зелёный" },
-    "koyu mavi": { tr: "Koyu Mavi", en: "Dark Blue", ru: "Тёмно-синий" },
-    "acik mavi": { tr: "Açık Mavi", en: "Light Blue", ru: "Голубой" },
-    "acik yesil": { tr: "Açık Yeşil", en: "Light Green", ru: "Светло-зелёный" },
-    "acik pembe": { tr: "Açık Pembe", en: "Light Pink", ru: "Светло-розовый" },
-    "koyu gri": { tr: "Koyu Gri", en: "Dark Gray", ru: "Тёмно-серый" },
-    "acik gri": { tr: "Açık Gri", en: "Light Gray", ru: "Светло-серый" },
-    "koyu kahverengi": {
-      tr: "Koyu Kahverengi",
-      en: "Dark Brown",
-      ru: "Тёмно-коричневый",
-    },
-    taba: { tr: "Taba", en: "Tan", ru: "Рыжевато-коричневый" },
-    murdum: { tr: "Mürdüm", en: "Plum", ru: "Сливовый" },
-    kiremit: { tr: "Kiremit", en: "Brick", ru: "Кирпичный" },
-    haki: { tr: "Haki", en: "Khaki", ru: "Хаки" },
-    mint: { tr: "Mint", en: "Mint", ru: "Мятный" },
-    lila: { tr: "Lila", en: "Lilac", ru: "Сиреневый" },
-    turkuaz: { tr: "Turkuaz", en: "Turquoise", ru: "Бирюзовый" },
-    fusya: { tr: "Fuşya", en: "Fuchsia", ru: "Фуксия" },
-    mercan: { tr: "Mercan", en: "Coral", ru: "Коралловый" },
-    altin: { tr: "Altın", en: "Gold", ru: "Золотой" },
-    gumus: { tr: "Gümüş", en: "Silver", ru: "Серебряный" },
-    indigo: { tr: "İndigo", en: "Indigo", ru: "Индиго" },
-    antrasit: { tr: "Antrasit", en: "Charcoal", ru: "Антрацитовый" },
-    tarcin: { tr: "Tarçın", en: "Cinnamon", ru: "Коричный" },
-    hardal: { tr: "Hardal", en: "Mustard", ru: "Горчичный" },
-    petrol: { tr: "Petrol", en: "Teal", ru: "Бирюзово-зелёный" },
-    pudra: { tr: "Pudra", en: "Powder Pink", ru: "Пудровый" },
-    vizon: { tr: "Vizon", en: "Mink", ru: "Норковый" },
-    camel: { tr: "Camel", en: "Camel", ru: "Верблюжий" },
-    ten: { tr: "Ten", en: "Nude", ru: "Телесный" },
-    "buz mavisi": { tr: "Buz Mavisi", en: "Ice Blue", ru: "Ледяной голубой" },
-    "gul kurusu": { tr: "Gül Kurusu", en: "Dusty Rose", ru: "Пыльная роза" },
-    tas: { tr: "Taş", en: "Stone", ru: "Каменный" },
-    sampanya: { tr: "Şampanya", en: "Champagne", ru: "Шампань" },
-    zeytin: { tr: "Zeytin", en: "Olive", ru: "Оливковый" },
-    leylak: { tr: "Leylak", en: "Lavender", ru: "Лавандовый" },
-    somon: { tr: "Somon", en: "Salmon", ru: "Лососёвый" },
-    bakir: { tr: "Bakır", en: "Copper", ru: "Медный" },
-    celik: { tr: "Çelik", en: "Steel", ru: "Стальной" },
-    vanilya: { tr: "Vanilya", en: "Vanilla", ru: "Ванильный" },
-    visne: { tr: "Vişne", en: "Cherry", ru: "Вишнёвый" },
-  };
-
-  if (existing) {
+  if (existingColors) {
     // Mevcut veriyle merge et (eksik renkleri ekle)
-    const current = JSON.parse(existing.value) as Record<
+    const current = JSON.parse(existingColors.value) as Record<
       string,
       Record<string, string>
     >;
     let added = 0;
-    for (const [key, value] of Object.entries(colorTranslations)) {
+    for (const [key, value] of Object.entries(defaultColorTranslations)) {
       if (!current[key]) {
         current[key] = value;
         added++;
@@ -92,15 +51,14 @@ async function seedDefaultSettings() {
       );
     }
   } else {
-    // Ilk kez olustur
     await prisma.settings.create({
       data: {
         key: "color_translations",
-        value: JSON.stringify(colorTranslations),
+        value: JSON.stringify(defaultColorTranslations),
       },
     });
     console.log(
-      `🎨 ${Object.keys(colorTranslations).length} renk cevirisi yazildi`,
+      `🎨 ${Object.keys(defaultColorTranslations).length} renk cevirisi yazildi`,
     );
   }
 }
