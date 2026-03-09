@@ -30,6 +30,8 @@ interface CustomTranslations {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+
 // Convert flat translation data to nested structure
 function unflattenTranslations(flatData: TranslationData, lang: Language): any {
   const result: any = {};
@@ -55,6 +57,19 @@ function unflattenTranslations(flatData: TranslationData, lang: Language): any {
   return result;
 }
 
+function applyCustomTranslations(
+  parsed: CustomTranslations,
+  setCurrentTranslations: (t: any) => void,
+  setAvailableLanguages: (langs: Language[]) => void,
+) {
+  const customTranslations: any = {};
+  for (const lang of parsed.activeLanguages) {
+    customTranslations[lang] = unflattenTranslations(parsed.data, lang);
+  }
+  setCurrentTranslations(customTranslations);
+  setAvailableLanguages(parsed.activeLanguages);
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   // Load saved language from localStorage or use default
   const [language, setLanguageState] = useState<Language>(() => {
@@ -76,33 +91,75 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("selectedLanguage", lang);
   }, []);
 
-  // Load custom translations from localStorage
+  // Load translations: DB > localStorage > static fallback
   useEffect(() => {
-    const saved = localStorage.getItem("customTranslations");
-    if (saved) {
+    let cancelled = false;
+
+    async function loadTranslations() {
+      // 1. Veritabanindan cevirileri yukle
       try {
-        const parsed: CustomTranslations = JSON.parse(saved);
-
-        // Convert flat data to nested structure for each language
-        const customTranslations: any = {};
-        for (const lang of parsed.activeLanguages) {
-          customTranslations[lang] = unflattenTranslations(parsed.data, lang);
+        const response = await fetch(`${API_URL}/settings`);
+        if (response.ok) {
+          const settings: Array<{ key: string; value: string }> =
+            await response.json();
+          const translationsEntry = settings.find(
+            (s) => s.key === "translations",
+          );
+          if (translationsEntry && !cancelled) {
+            const parsed: CustomTranslations = JSON.parse(
+              translationsEntry.value,
+            );
+            if (parsed.data && parsed.activeLanguages) {
+              applyCustomTranslations(
+                parsed,
+                setCurrentTranslations,
+                setAvailableLanguages,
+              );
+              return; // DB'den basariyla yuklendi
+            }
+          }
         }
-
-        setCurrentTranslations(customTranslations);
-        setAvailableLanguages(parsed.activeLanguages);
-
-        // If current language is not available, switch to first available
-        if (!parsed.activeLanguages.includes(language)) {
-          setLanguage(parsed.activeLanguages[0]);
-        }
-      } catch (error) {
-        console.error("Failed to load custom translations:", error);
-        setCurrentTranslations(translations);
-        setAvailableLanguages(["en", "tr", "ru"]);
+      } catch {
+        // API hatasi - fallback'e devam
       }
+
+      // 2. localStorage fallback (admin panel override)
+      if (cancelled) return;
+      const saved = localStorage.getItem("customTranslations");
+      if (saved) {
+        try {
+          const parsed: CustomTranslations = JSON.parse(saved);
+          applyCustomTranslations(
+            parsed,
+            setCurrentTranslations,
+            setAvailableLanguages,
+          );
+          return;
+        } catch {
+          // Parse hatasi - static fallback
+        }
+      }
+
+      // 3. Static fallback (translations.ts)
+      // Zaten varsayilan olarak yukleniyor, birsey yapmaya gerek yok
     }
+
+    loadTranslations();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Dil degistiginde, mevcut dil aktif dillerde yoksa ilk dile gec
+  useEffect(() => {
+    if (
+      availableLanguages.length > 0 &&
+      !availableLanguages.includes(language)
+    ) {
+      setLanguage(availableLanguages[0]);
+    }
+  }, [availableLanguages, language, setLanguage]);
 
   const t = (key: string): string => {
     const keys = key.split(".");
