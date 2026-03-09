@@ -333,12 +333,27 @@ export function ProductDetailPage() {
                 {priceFormatted} {currency}
               </p>
 
-              {/* Seri beden tablosu */}
+              {/* Seri beden bilgisi */}
               {sizeCount > 1 && (
                 <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {getSizeList(displaySizeRange).map((size) => (
+                        <span
+                          key={size}
+                          className="inline-flex items-center justify-center min-w-[32px] px-2 py-0.5 bg-gray-100 text-xs font-medium text-gray-700 rounded"
+                        >
+                          {size}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                      {sizeCount} ad
+                    </span>
+                  </div>
                   <div className="bg-black text-white px-3 py-2 flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      SERİ {sizeCount} ADET
+                    <span className="text-xs font-medium uppercase tracking-wider">
+                      Toplam
                     </span>
                     <span className="text-sm font-bold">
                       {(unitPriceVal * sizeCount).toLocaleString(
@@ -347,21 +362,6 @@ export function ProductDetailPage() {
                       )}{" "}
                       {currency}
                     </span>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                    {getSizeList(displaySizeRange).map((size) => (
-                      <div
-                        key={size}
-                        className="flex items-center justify-between px-3 py-1.5"
-                      >
-                        <span className="text-sm text-gray-700 font-medium">
-                          {size}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          1 ad × {priceFormatted} {currency}
-                        </span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
