@@ -7,6 +7,7 @@ import { useI18n } from "../../contexts/I18nContext";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import { getSizeCount, getSizeList } from "../../utils/productHelpers";
+import { translateColor } from "../../utils/translateColor";
 import type { ProductVariant } from "../../data/products";
 
 const localeMap: Record<string, string> = {
@@ -359,7 +360,7 @@ export function ProductDetailPage() {
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                           }`}
                         >
-                          {color}
+                          {translateColor(color, t)}
                         </button>
                       ))}
                     </div>

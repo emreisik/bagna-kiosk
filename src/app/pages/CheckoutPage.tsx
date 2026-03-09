@@ -8,6 +8,7 @@ import { useCreateOrder } from "../../hooks/useOrders";
 import { useCurrency } from "../../hooks/useCurrency";
 import { normalizeImageUrl } from "../../utils/imageUrl";
 import { getSizeCount } from "../../utils/productHelpers";
+import { translateColor } from "../../utils/translateColor";
 import { motion, AnimatePresence } from "motion/react";
 
 const WHATSAPP_NUMBER = "905385717136";
@@ -308,7 +309,7 @@ export function CheckoutPage() {
                             </span>
                             {displayColor && (
                               <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                {displayColor}
+                                {translateColor(displayColor, t)}
                               </span>
                             )}
                             {sizeCount > 1 && (
@@ -382,7 +383,7 @@ export function CheckoutPage() {
                             </span>
                             {displayColor && (
                               <span className="inline-flex items-center text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                {displayColor}
+                                {translateColor(displayColor, t)}
                               </span>
                             )}
                             {sizeCount > 1 && (
@@ -468,7 +469,7 @@ export function CheckoutPage() {
                 {items.map((item, index) => {
                   const { itemTotal } = cartCalculations.itemSubtotals[index];
                   const colorLabel = item.selectedVariant?.color
-                    ? ` (${item.selectedVariant.color})`
+                    ? ` (${translateColor(item.selectedVariant.color, t)})`
                     : "";
                   return (
                     <div
