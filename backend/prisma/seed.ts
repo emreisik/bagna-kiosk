@@ -908,6 +908,8 @@ async function main() {
     somon: { tr: "Somon", en: "Salmon", ru: "Лососёвый" },
     bakir: { tr: "Bakır", en: "Copper", ru: "Медный" },
     celik: { tr: "Çelik", en: "Steel", ru: "Стальной" },
+    vanilya: { tr: "Vanilya", en: "Vanilla", ru: "Ванильный" },
+    visne: { tr: "Vişne", en: "Cherry", ru: "Вишнёвый" },
   };
 
   await prisma.settings.upsert({

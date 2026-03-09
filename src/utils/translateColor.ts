@@ -1,9 +1,14 @@
 /**
  * Turkce ozel karakterleri ASCII karsiliklarina donusturur.
- * "Kırmızı" → "kirmizi", "Mürdüm" → "murdum", "Yeşil" → "yesil"
+ * "SİYAH" → "siyah", "KAHVERENGİ" → "kahverengi", "TARÇIN" → "tarcin"
+ *
+ * Onemli: Buyuk harf İ ve I once replace edilmeli, sonra toLowerCase cagirilmali.
+ * Cunku JS'de "İ".toLowerCase() = "i\u0307" (combining dot) uretir, "i" degil.
  */
 function normalizeTurkish(str: string): string {
   return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "i")
     .toLowerCase()
     .replace(/ı/g, "i")
     .replace(/ö/g, "o")
@@ -11,7 +16,7 @@ function normalizeTurkish(str: string): string {
     .replace(/ş/g, "s")
     .replace(/ç/g, "c")
     .replace(/ğ/g, "g")
-    .replace(/İ/g, "i")
+    .replace(/\u0307/g, "") // combining dot above (İ kalintisindan)
     .trim();
 }
 
@@ -21,7 +26,7 @@ function normalizeTurkish(str: string): string {
  *
  * colorMap format: { "siyah": { "tr": "Siyah", "en": "Black", "ru": "Чёрный" }, ... }
  *
- * Hem ASCII key'ler (siyah, kirmizi) hem de Turkce key'ler (Siyah, Kırmızı) ile calisir.
+ * Hem ASCII key'ler (siyah, kirmizi) hem de Turkce key'ler (SİYAH, Kırmızı) ile calisir.
  */
 export function translateColor(
   color: string,

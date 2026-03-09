@@ -7,11 +7,6 @@ async function seedDefaultSettings() {
   const existing = await prisma.settings.findUnique({
     where: { key: "color_translations" },
   });
-  if (existing) return;
-
-  console.log(
-    "🎨 color_translations bulunamadi, varsayilan degerler yaziliyor...",
-  );
   const colorTranslations: Record<string, Record<string, string>> = {
     siyah: { tr: "Siyah", en: "Black", ru: "Чёрный" },
     beyaz: { tr: "Beyaz", en: "White", ru: "Белый" },
@@ -70,17 +65,44 @@ async function seedDefaultSettings() {
     somon: { tr: "Somon", en: "Salmon", ru: "Лососёвый" },
     bakir: { tr: "Bakır", en: "Copper", ru: "Медный" },
     celik: { tr: "Çelik", en: "Steel", ru: "Стальной" },
+    vanilya: { tr: "Vanilya", en: "Vanilla", ru: "Ванильный" },
+    visne: { tr: "Vişne", en: "Cherry", ru: "Вишнёвый" },
   };
 
-  await prisma.settings.create({
-    data: {
-      key: "color_translations",
-      value: JSON.stringify(colorTranslations),
-    },
-  });
-  console.log(
-    `✅ ${Object.keys(colorTranslations).length} renk cevirisi yazildi`,
-  );
+  if (existing) {
+    // Mevcut veriyle merge et (eksik renkleri ekle)
+    const current = JSON.parse(existing.value) as Record<
+      string,
+      Record<string, string>
+    >;
+    let added = 0;
+    for (const [key, value] of Object.entries(colorTranslations)) {
+      if (!current[key]) {
+        current[key] = value;
+        added++;
+      }
+    }
+    if (added > 0) {
+      await prisma.settings.update({
+        where: { key: "color_translations" },
+        data: { value: JSON.stringify(current) },
+      });
+      console.log(
+        `🎨 ${added} yeni renk cevirisi eklendi (toplam: ${Object.keys(current).length})`,
+      );
+    }
+  } else {
+    // Ilk kez olustur
+    await prisma.settings.create({
+      data: {
+        key: "color_translations",
+        value: JSON.stringify(colorTranslations),
+      },
+    });
+    console.log(
+      `🎨 ${Object.keys(colorTranslations).length} renk cevirisi yazildi`,
+    );
+  }
 }
 
 async function startServer() {
