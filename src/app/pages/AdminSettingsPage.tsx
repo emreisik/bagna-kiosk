@@ -814,6 +814,7 @@ export function AdminSettingsPage() {
                       <option value="zoom">Zoom (Yakınlaşma)</option>
                       <option value="flip">Flip (Çevirme)</option>
                       <option value="kenburns">Ken Burns (Zoom+Pan)</option>
+                      <option value="cinema">Cinema (Sonsuz Kayma)</option>
                     </select>
                     <p className="mt-1.5 text-xs text-gray-500">
                       Görseller arası geçiş animasyonu

@@ -1,6 +1,6 @@
 import { useI18n } from "../../../contexts/I18nContext";
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Language } from "../../../i18n/translations";
 import { useNavigate } from "react-router";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
@@ -15,6 +15,51 @@ interface AttractOverlayProps {
   brandName?: string;
 }
 
+// Sonsuz yatay kayma komponenti (film seridi efekti)
+function CinemaSlideshow({
+  images,
+  interval,
+}: {
+  images: string[];
+  interval: number;
+}) {
+  // Gorselleri 2x kopyala — kesintisiz dongu icin
+  const doubled = useMemo(() => [...images, ...images], [images]);
+  const totalDuration = images.length * (interval / 1000);
+
+  return (
+    <>
+      <style>{`
+        @keyframes cinema-scroll {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+      `}</style>
+      <div
+        className="flex h-full"
+        style={{
+          width: `${images.length * 200}%`,
+          animation: `cinema-scroll ${totalDuration}s linear infinite`,
+        }}
+      >
+        {doubled.map((img, i) => (
+          <div
+            key={i}
+            className="h-full flex-shrink-0"
+            style={{ width: `${100 / doubled.length}%` }}
+          >
+            <img
+              src={normalizeImageUrl(img)}
+              alt={`Slide ${(i % images.length) + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function AttractOverlay({
   screensaverLogo,
   siteName,
@@ -25,6 +70,7 @@ export function AttractOverlay({
   brandName,
 }: AttractOverlayProps = {}) {
   const isBrandMode = !!brandLogo;
+  const isCinema = slideshowTransition === "cinema";
   const { availableLanguages } = useI18n();
   const navigate = useNavigate();
   const [rotatingLanguage, setRotatingLanguage] = useState<Language>(
@@ -121,16 +167,17 @@ export function AttractOverlay({
     return () => clearInterval(interval);
   }, [availableLanguages]);
 
-  // Rotate product images with configurable interval
+  // Rotate product images with configurable interval (cinema modunda gereksiz)
   useEffect(() => {
-    if (allProductImages.length <= 1) return; // Don't rotate if only 1 image
+    if (isCinema) return;
+    if (allProductImages.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentProductIndex((prev) => (prev + 1) % allProductImages.length);
     }, slideshowInterval);
 
     return () => clearInterval(interval);
-  }, [allProductImages.length, slideshowInterval]);
+  }, [allProductImages.length, slideshowInterval, isCinema]);
 
   // QR Code Scanner Listener
   useEffect(() => {
@@ -227,6 +274,38 @@ export function AttractOverlay({
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentUrl)}&color=000000&bgcolor=FFFFFF`;
 
+  // Slideshow arka plan — AnimatePresence veya Cinema
+  const renderSlideshow = () => {
+    if (isCinema && allProductImages.length > 1) {
+      return (
+        <CinemaSlideshow
+          images={allProductImages}
+          interval={slideshowInterval}
+        />
+      );
+    }
+
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`slide-${currentProductIndex}`}
+          {...getTransitionVariants()}
+          className="absolute inset-0"
+          style={{
+            transformStyle: "preserve-3d",
+            backfaceVisibility: "hidden",
+          }}
+        >
+          <img
+            src={normalizeImageUrl(allProductImages[currentProductIndex])}
+            alt={`Slide ${currentProductIndex + 1}`}
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
+      </AnimatePresence>
+    );
+  };
+
   // Marka modu: slideshow arka plan + beyaz merkez panel
   if (isBrandMode) {
     return (
@@ -238,24 +317,8 @@ export function AttractOverlay({
         style={{ cursor: "pointer" }}
       >
         {/* Arka plan: Slideshow görselleri */}
-        <div className="absolute inset-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`brand-slide-${currentProductIndex}`}
-              {...getTransitionVariants()}
-              className="absolute inset-0"
-              style={{
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-              }}
-            >
-              <img
-                src={normalizeImageUrl(allProductImages[currentProductIndex])}
-                alt={`Slide ${currentProductIndex + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
-          </AnimatePresence>
+        <div className="absolute inset-0 overflow-hidden">
+          {renderSlideshow()}
           {/* Koyu overlay - beyaz panelin okunabilirliği için */}
           <div className="absolute inset-0 bg-black/60" />
         </div>
@@ -318,8 +381,8 @@ export function AttractOverlay({
           </motion.p>
         </motion.div>
 
-        {/* Slide indicator - alt kısım */}
-        {allProductImages.length > 1 && (
+        {/* Slide indicator (cinema modunda gosterme) */}
+        {!isCinema && allProductImages.length > 1 && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
             {allProductImages.slice(0, 10).map((_, index) => (
               <div
@@ -391,28 +454,15 @@ export function AttractOverlay({
 
       {/* Bottom: Image Slideshow */}
       <div className="flex-1 relative overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`slide-${currentProductIndex}`}
-            {...getTransitionVariants()}
-            className="absolute inset-0"
-            style={{
-              transformStyle: "preserve-3d",
-              backfaceVisibility: "hidden",
-            }}
-          >
-            <img
-              src={normalizeImageUrl(allProductImages[currentProductIndex])}
-              alt={`Slide ${currentProductIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
-            {/* Subtle top gradient for seamless blend */}
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent" />
-          </motion.div>
-        </AnimatePresence>
+        {renderSlideshow()}
 
-        {/* Slide indicator */}
-        {allProductImages.length > 1 && (
+        {/* Subtle top gradient for seamless blend (cinema harici) */}
+        {!isCinema && (
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent z-10" />
+        )}
+
+        {/* Slide indicator (cinema modunda gosterme) */}
+        {!isCinema && allProductImages.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
             {allProductImages.slice(0, 10).map((_, index) => (
               <div
