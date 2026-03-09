@@ -337,14 +337,17 @@ export function CheckoutPage() {
                             )}
                             {sizeCount > 1 && (
                               <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
-                                SERİ {sizeCount} Ad
+                                {t("seriesCount").replace(
+                                  "{count}",
+                                  String(sizeCount),
+                                )}
                               </span>
                             )}
                           </div>
                           {sizeCount > 1 && (
                             <p className="text-[10px] text-gray-400 mt-0.5">
                               {formatPrice(basePrice, language)}
-                              {currency} × {sizeCount} ad ={" "}
+                              {currency} × {sizeCount} {t("pcs")} ={" "}
                               {formatPrice(unitPrice, language)}
                               {currency}
                             </p>
@@ -408,14 +411,17 @@ export function CheckoutPage() {
                             )}
                             {sizeCount > 1 && (
                               <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
-                                SERİ {sizeCount} Ad
+                                {t("seriesCount").replace(
+                                  "{count}",
+                                  String(sizeCount),
+                                )}
                               </span>
                             )}
                           </div>
                           {sizeCount > 1 && (
                             <p className="text-[10px] text-gray-400 mt-0.5">
                               {formatPrice(basePrice, language)}
-                              {currency} × {sizeCount} ad ={" "}
+                              {currency} × {sizeCount} {t("pcs")} ={" "}
                               {formatPrice(unitPrice, language)}
                               {currency}
                             </p>

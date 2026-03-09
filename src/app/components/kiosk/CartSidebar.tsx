@@ -138,7 +138,10 @@ export function CartSidebar() {
                           {/* Seri Badge - gorsel uzerinde */}
                           {sizeCount > 1 && (
                             <div className="absolute -top-1.5 -right-1.5 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-tight">
-                              {sizeCount} AD
+                              {t("seriesPcs").replace(
+                                "{count}",
+                                String(sizeCount),
+                              )}
                             </div>
                           )}
                         </div>
@@ -174,7 +177,10 @@ export function CartSidebar() {
                             )}
                             {sizeCount > 1 && (
                               <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
-                                SERİ {sizeCount} Adet
+                                {t("seriesCount").replace(
+                                  "{count}",
+                                  String(sizeCount),
+                                )}
                               </span>
                             )}
                           </div>
@@ -183,7 +189,7 @@ export function CartSidebar() {
                           {sizeCount > 1 && (
                             <p className="text-[10px] text-gray-400 mt-1">
                               {formatPrice(baseUnitPrice, language)}
-                              {currency} × {sizeCount} ad ={" "}
+                              {currency} × {sizeCount} {t("pcs")} ={" "}
                               {formatPrice(seriesTotal, language)}
                               {currency}
                             </p>

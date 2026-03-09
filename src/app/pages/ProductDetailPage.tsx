@@ -351,7 +351,7 @@ export function ProductDetailPage() {
                   ))}
                   <div className="flex flex-col items-center divide-y divide-gray-200 px-4 py-0 bg-gray-50">
                     <span className="text-sm font-medium text-gray-400 uppercase tracking-wider py-2">
-                      Toplam
+                      {t("total")}
                     </span>
                     <span className="text-sm font-bold text-gray-900 py-2">
                       {(unitPriceVal * sizeCount).toLocaleString(

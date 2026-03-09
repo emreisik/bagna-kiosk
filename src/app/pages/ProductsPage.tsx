@@ -255,12 +255,14 @@ export function ProductsPage() {
         <div className="max-w-[2000px] mx-auto">
           {isLoadingProducts ? (
             <div className="flex items-center justify-center py-32">
-              <p className="text-2xl text-gray-400 font-light">Loading...</p>
+              <p className="text-2xl text-gray-400 font-light">
+                {t("loading")}
+              </p>
             </div>
           ) : productsError ? (
             <div className="flex items-center justify-center py-32">
               <p className="text-2xl text-red-400 font-light">
-                Error loading products. Please try again.
+                {t("errorLoadingProducts")}
               </p>
             </div>
           ) : products.length > 0 ? (

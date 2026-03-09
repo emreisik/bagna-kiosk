@@ -343,12 +343,14 @@ export function BrandPage() {
         <div className="max-w-[2000px] mx-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-32">
-              <p className="text-2xl text-gray-400 font-light">Loading...</p>
+              <p className="text-2xl text-gray-400 font-light">
+                {t("loading")}
+              </p>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-32">
               <p className="text-2xl text-red-400 font-light">
-                Error loading brand. Please try again.
+                {t("errorLoadingBrand")}
               </p>
             </div>
           ) : filteredProducts.length > 0 ? (

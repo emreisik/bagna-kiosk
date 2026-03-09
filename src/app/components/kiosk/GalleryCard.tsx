@@ -2,6 +2,7 @@ import { Product } from "../../../data/products";
 import { cn } from "../ui/utils";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
 import { getSizeCount } from "../../../utils/productHelpers";
+import { useI18n } from "../../../contexts/I18nContext";
 
 interface GalleryCardProps {
   product: Product;
@@ -20,6 +21,7 @@ export function GalleryCard({
   infoPosition = "below",
   currency = "$",
 }: GalleryCardProps) {
+  const { t } = useI18n();
   // Birim fiyat gosterilir - seri toplam sadece sepette hesaplanir
   const priceNumber = product.price.replace(/[^0-9.,]/g, "");
   const sizeCount = getSizeCount(product.sizeRange);
@@ -41,7 +43,7 @@ export function GalleryCard({
           <>
             <span className="text-gray-400">•</span>
             <span className="inline-flex items-center text-[10px] font-semibold bg-black text-white px-1.5 py-0.5 rounded">
-              {sizeCount} AD
+              {t("seriesPcs").replace("{count}", String(sizeCount))}
             </span>
           </>
         )}

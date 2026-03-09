@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { normalizeImageUrl } from "../../../utils/imageUrl";
 import { getSizeCount } from "../../../utils/productHelpers";
 import { useCart } from "../../../contexts/CartContext";
+import { useI18n } from "../../../contexts/I18nContext";
 import { useNavigate } from "react-router";
 
 interface ProductDetailModalProps {
@@ -22,6 +23,7 @@ export function ProductDetailModal({
   brandSlug,
 }: ProductDetailModalProps) {
   const currency = useCurrency();
+  const { t } = useI18n();
   const galleryRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
   const navigate = useNavigate();
@@ -153,7 +155,7 @@ export function ProductDetailModal({
                   {/* Left: Product Code - Wider on Mobile Only */}
                   <div className="flex-[2] md:flex-1 px-2 py-2 md:px-6 md:py-4 lg:px-10 lg:py-6 flex flex-col justify-center min-w-0">
                     <p className="text-[9px] md:text-xs font-light text-gray-400 tracking-[0.05em] md:tracking-[0.2em] mb-0.5 md:mb-2 uppercase">
-                      Product Code
+                      {t("productCode")}
                     </p>
                     <p className="text-[10px] md:text-lg lg:text-2xl font-light text-black tracking-tight whitespace-nowrap">
                       {product.productCode}
@@ -163,14 +165,17 @@ export function ProductDetailModal({
                   {/* Center: Size Range + Seri Bilgisi */}
                   <div className="flex-1 px-2 py-2 md:px-6 md:py-4 lg:px-10 lg:py-6 flex flex-col justify-center items-center min-w-0">
                     <p className="text-[9px] md:text-xs font-light text-gray-400 tracking-[0.1em] md:tracking-[0.2em] mb-0.5 md:mb-2 uppercase">
-                      Size
+                      {t("product.size")}
                     </p>
                     <p className="text-lg md:text-3xl lg:text-5xl font-extralight text-black tracking-[0.15em] md:tracking-[0.3em]">
                       {product.sizeRange}
                     </p>
                     {getSizeCount(product.sizeRange) > 1 && (
                       <span className="mt-1 md:mt-2 inline-flex items-center text-[9px] md:text-xs font-bold bg-black text-white px-2 py-0.5 md:px-3 md:py-1 rounded-full tracking-wide">
-                        SERİ {getSizeCount(product.sizeRange)} ADET
+                        {t("seriesCount").replace(
+                          "{count}",
+                          String(getSizeCount(product.sizeRange)),
+                        )}
                       </span>
                     )}
                   </div>
@@ -178,7 +183,7 @@ export function ProductDetailModal({
                   {/* Right: Price - Birim fiyat */}
                   <div className="flex-1 px-2 py-2 md:px-6 md:py-4 lg:px-10 lg:py-6 bg-black flex flex-col justify-center items-center min-w-0">
                     <p className="text-[9px] md:text-xs font-light text-white/60 tracking-[0.1em] md:tracking-[0.2em] mb-0.5 md:mb-2 uppercase">
-                      Price
+                      {t("checkout.price")}
                     </p>
                     <p className="text-xl md:text-4xl lg:text-6xl font-extralight text-white tracking-wide md:tracking-wider">
                       {product.price.replace(/[$€₺£¥₽]+$/g, "").trim()}{" "}
@@ -198,7 +203,7 @@ export function ProductDetailModal({
                   >
                     <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-white" />
                     <span className="hidden md:inline text-white uppercase tracking-widest text-xs md:text-sm lg:text-base font-medium">
-                      Sepete Ekle
+                      {t("product.addToCart")}
                     </span>
                   </button>
                 </div>

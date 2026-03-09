@@ -6,11 +6,13 @@ import { kioskConfig } from "../../config/kiosk.config";
 import { AttractOverlay } from "../components/kiosk/AttractOverlay";
 import { AnimatePresence, motion } from "motion/react";
 import { normalizeImageUrl } from "../../utils/imageUrl";
+import { useI18n } from "../../contexts/I18nContext";
 
 export function BrandsListPage() {
   const navigate = useNavigate();
   const { data: brands, isLoading, error } = useBrands();
   const { data: settings } = useSettings();
+  const { t } = useI18n();
 
   const isIdle = useIdleTimer(
     settings?.idle_timeout || kioskConfig.behavior.idleTimeoutMs,
@@ -43,12 +45,14 @@ export function BrandsListPage() {
         <div className="max-w-[2000px] mx-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-32">
-              <p className="text-2xl text-gray-400 font-light">Yükleniyor...</p>
+              <p className="text-2xl text-gray-400 font-light">
+                {t("loading")}
+              </p>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-32">
               <p className="text-2xl text-red-400 font-light">
-                Markalar yüklenemedi. Lütfen tekrar deneyin.
+                {t("errorLoading")}
               </p>
             </div>
           ) : brands && brands.length > 0 ? (
@@ -83,7 +87,7 @@ export function BrandsListPage() {
           ) : (
             <div className="flex items-center justify-center py-32">
               <p className="text-2xl text-gray-400 font-light">
-                Henüz marka eklenmemiş
+                {t("noBrands")}
               </p>
             </div>
           )}
